@@ -1,0 +1,2136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Rivier Conta">
+  <meta name="theme-color" content="#0d1f1e">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d1f1e'/><text y='.9em' font-size='70' x='15'>📊</text></svg>">
+  <title>Rivier Conta · Gestión de comprobantes</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    :root{
+      --ink:#0d1f1e;--soft:#5a706d;--white:#fff;
+      --green:#1fa96e;--green2:#17885a;--mint:#d4f5e5;--mint2:#eafbf2;
+      --gold:#e8a820;--red:#d03b36;--redbg:#fff0ef;
+      --blue:#2d6be4;
+      --line:#dde3e0;--linedark:#c8d0cd;
+      --shadow:0 8px 32px rgba(13,31,30,.10);--shadow-lg:0 20px 60px rgba(13,31,30,.16);
+      --r:12px;--r-lg:18px;--r-xl:24px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#eceee9;color:var(--ink);font:14px/1.6 'Inter',system-ui,sans-serif}
+    button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}
+    .app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    /* SIDEBAR */
+    .sidebar{position:sticky;top:0;height:100vh;background:var(--ink);color:#fff;display:flex;flex-direction:column;overflow:hidden}
+    .sidebar-top{padding:28px 20px 0}
+    .logo{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid #1e3532}
+    .logo-badge{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--green),#12704a);display:grid;place-items:center;font-size:22px;flex-shrink:0}
+    .logo strong{display:block;font-size:14px;font-weight:700}.logo small{color:#8aaba6;font-size:11px}
+    .nav{display:grid;gap:3px;margin-top:20px}
+    .nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:0;border-radius:10px;color:#8aaba6;background:transparent;text-align:left;font-weight:600;font-size:13px;transition:.15s}
+    .nav-btn .ico{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#182e2b;font-size:16px;flex-shrink:0;transition:.15s}
+    .nav-btn.active,.nav-btn:hover{color:#fff}.nav-btn.active .ico{background:var(--green)}.nav-btn:hover:not(.active) .ico{background:#1e3532}
+    .nav-div{height:1px;background:#1e3532;margin:12px 0}
+    .sidebar-footer{margin-top:auto;padding:16px 20px;background:#081615;font-size:11px;color:#607e7a;border-top:1px solid #1e3532}
+    .sidebar-footer b{display:block;color:#9abfb9;margin-bottom:3px}
+    .db-stat{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#9abfb9}
+    /* MAIN */
+    main{min-width:0;display:flex;flex-direction:column}
+    .topbar{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+    .topbar-left{display:flex;align-items:center;gap:14px}
+    .topbar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}.topbar p{margin-top:1px;color:var(--soft);font-size:12px}
+    .top-actions{display:flex;gap:8px}
+    .content{padding:28px;flex:1}
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--white);color:var(--ink);font-weight:600;font-size:13px;transition:.15s;white-space:nowrap}
+    .btn:hover{border-color:var(--linedark);background:#f7f9f8}
+    .btn.primary{border-color:var(--green);background:var(--green);color:#fff}.btn.primary:hover{background:var(--green2)}
+    .btn.dark{background:var(--ink);border-color:var(--ink);color:#fff}.btn.dark:hover{background:#1a3532}
+    .btn.danger{color:var(--red);border-color:#f0cccb}.btn.danger:hover{background:var(--redbg)}
+    .btn.sm{min-height:32px;padding:0 12px;font-size:12px}
+    .btn.ai-btn{background:linear-gradient(135deg,#1a3b8a,#2d6be4);border-color:transparent;color:#fff}
+    .btn.ai-btn:hover{background:linear-gradient(135deg,#163080,#255ecc)}
+    /* VIEWS */
+    .view{display:none}.view.active{display:block}
+    /* STATS */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+    .stat{padding:22px 20px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--white);position:relative;overflow:hidden}
+    .stat::after{content:'';position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:var(--mint2);opacity:.6}
+    .stat.alert::after{background:#fff5f5}
+    .stat-lbl{color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+    .stat strong{display:block;margin-top:8px;font-size:26px;font-weight:800;letter-spacing:-1px;font-family:'JetBrains Mono',monospace}
+    .stat small{display:block;margin-top:5px;font-size:11px;color:var(--green);font-weight:600}
+    .stat.alert small{color:var(--red)}
+    /* CARDS */
+    .grid-2{display:grid;grid-template-columns:1.6fr .9fr;gap:18px}
+    .card{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--white)}
+    .card-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
+    .card-head h2{font-size:15px;font-weight:700}.card-body{padding:20px}
+    /* DROP */
+    .drop{display:grid;place-items:center;min-height:180px;padding:24px;border:2px dashed #c5d2cc;border-radius:14px;background:#f8faf8;text-align:center;transition:.2s}
+    .drop.over{border-color:var(--green);background:var(--mint2)}
+    .drop-icon{width:52px;height:52px;display:grid;place-items:center;margin-bottom:12px;border-radius:16px;background:var(--mint);font-size:24px}
+    .drop h3{font-size:15px;font-weight:700;margin-bottom:4px}.drop p{color:var(--soft);font-size:12px}.drop input{display:none}.drop .btn{margin-top:12px}
+    .privacy-note{display:flex;gap:10px;margin-top:14px;padding:12px 14px;border-radius:10px;background:#eef7f3;color:#336b50;font-size:11px}
+    /* AI PANEL */
+    .ai-panel{margin-top:14px;padding:16px;border:1px solid #c7d8f8;border-radius:14px;background:linear-gradient(135deg,#f0f5ff,#f8f0ff)}
+    .ai-panel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .ai-ico{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2d6be4,#8b3fe8);display:grid;place-items:center;color:#fff;font-size:16px;flex-shrink:0}
+    .ai-panel-head strong{font-size:13px;font-weight:700}.ai-panel-head span{font-size:11px;color:#4a5a9a}
+    .ai-output{margin-top:12px;padding:13px;border-radius:10px;background:rgba(255,255,255,.8);font-size:12px;border:1px solid #dde5f8;min-height:60px;white-space:pre-wrap;line-height:1.7}
+    .ai-status{font-size:11px;color:#5a6a9a;margin-top:8px;display:flex;align-items:center;gap:6px}
+    .spinner{display:inline-block;width:12px;height:12px;border:2px solid #c0caec;border-top-color:#2d6be4;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* ACTIVITY */
+    .activity{display:grid;gap:11px}
+    .act{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:start}
+    .act-i{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:var(--mint);font-size:15px;flex-shrink:0}
+    .act p{margin:0;font-size:12px;font-weight:600}.act small{color:var(--soft);font-size:11px}
+    /* TABLE */
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+    .search{min-width:240px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--white);transition:.15s}
+    .search:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(31,169,110,.12)}
+    .filters{display:flex;gap:6px;flex-wrap:wrap}
+    .chip{padding:8px 14px;border:1px solid var(--line);border-radius:99px;background:var(--white);font-size:12px;font-weight:600;transition:.15s}
+    .chip.active{color:#fff;background:var(--ink);border-color:var(--ink)}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--white)}
+    .table{width:100%;min-width:1100px;border-collapse:collapse}
+    .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left}
+    .table th{color:var(--soft);background:#f6f8f6;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+    .table td{font-size:12px;white-space:nowrap}
+    .table tr:last-child td{border:0}.table tr:hover td{background:#fbfdfb}
+    .table td.ed{cursor:pointer;position:relative}
+    .table td.ed:hover{background:#f0f9f4!important}
+    .table td.ed:hover::after{content:'✎';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--green);opacity:.6}
+    .cell-inp{width:100%;padding:3px 7px;border:1.5px solid var(--green);border-radius:6px;background:#fff;font-size:12px;font-family:inherit;outline:none}
+    .status{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;font-size:10px;font-weight:700}
+    .status.ok{color:#0f6642;background:var(--mint)}.status.warn{color:#7a5000;background:#fff3cc}.status.error{color:#8b1f1c;background:var(--redbg)}
+    .dots{border:0;background:transparent;font-size:20px;padding:0 6px;color:var(--soft)}.dots:hover{color:var(--ink)}
+    .empty{padding:52px;text-align:center;color:var(--soft)}
+    .money{text-align:right!important;font-family:'JetBrains Mono',monospace;font-size:12px}
+    /* FILE BADGE */
+    .file-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;background:#eef3fd;color:#2d6be4;cursor:pointer;border:1px solid #c7d8f8;transition:.15s}
+    .file-badge:hover{background:#dce8fc}
+    .file-badge.pdf{background:#fff0ef;color:#c0392b;border-color:#f0cccb}
+    .file-badge.img{background:#f0f9f4;color:#1a6644;border-color:#b8e8d0}
+    .file-badge.none{background:#f4f6f4;color:#8aaba6;border-color:var(--line);cursor:default}
+    /* SUMMARY ROW */
+    .sum-row{display:flex;gap:16px;padding:14px 22px;background:linear-gradient(135deg,#f0f9f4,#f8f0ff);border-top:1px solid var(--line);border-radius:0 0 var(--r-lg) var(--r-lg);font-size:12px;flex-wrap:wrap}
+    .sum-item{display:flex;flex-direction:column;gap:2px}
+    .sum-item small{font-size:10px;color:var(--soft);font-weight:500}
+    .sum-item span{font-family:'JetBrains Mono',monospace;color:var(--ink);font-weight:600}
+    /* REPORTS */
+    .report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+    .report{padding:24px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--white);display:flex;flex-direction:column}
+    .rnum{width:48px;height:48px;display:grid;place-items:center;border-radius:14px;color:#fff;background:var(--ink);font-weight:800;font-size:14px;font-family:'JetBrains Mono',monospace}
+    .rnum.g{background:linear-gradient(135deg,var(--green),var(--green2))}.rnum.b{background:linear-gradient(135deg,#2d6be4,#1a4aaa)}.rnum.gold{background:linear-gradient(135deg,#e8a820,#c47d0a)}.rnum.teal{background:#5a706d}.rnum.xl{background:linear-gradient(135deg,#1d7a4a,#0e5234)}
+    .report h3{margin:16px 0 5px;font-size:15px;font-weight:700}
+    .report p{color:var(--soft);font-size:12px;flex:1;line-height:1.6}.report .btn{margin-top:16px}
+    .rcnt{font-size:11px;font-weight:600;color:var(--green);margin-top:5px}
+    /* ARCHIVE VIEW */
+    .archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .arch-card{border:1px solid var(--line);border-radius:14px;background:var(--white);overflow:hidden;cursor:pointer;transition:.15s}
+    .arch-card:hover{border-color:var(--green);box-shadow:0 4px 16px rgba(31,169,110,.1);transform:translateY(-1px)}
+    .arch-thumb{width:100%;height:130px;display:flex;align-items:center;justify-content:center;background:#f4f6f4;font-size:42px;position:relative;overflow:hidden}
+    .arch-thumb img{width:100%;height:100%;object-fit:cover}
+    .arch-thumb .arch-ext{position:absolute;bottom:8px;right:8px;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(13,31,30,.7);color:#fff}
+    .arch-info{padding:11px 13px;border-top:1px solid var(--line)}
+    .arch-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .arch-meta{font-size:11px;color:var(--soft);margin-top:2px}
+    .arch-ncf{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* SETTINGS */
+    .settings-wrap{max-width:760px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field{display:grid;gap:6px}.field.full{grid-column:1/-1}
+    .field label{font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+    .field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r);background:var(--white);transition:.15s}
+    .field input:focus,.field select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(31,169,110,.1)}
+    .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
+    .rule{padding:16px;border:1px solid var(--line);border-radius:12px;background:#fafbfa}
+    .rule b{display:block;margin-bottom:4px;font-size:12px;font-weight:700}.rule span{color:var(--soft);font-size:11px;line-height:1.5}
+    /* MODAL */
+    dialog{width:min(900px,calc(100% - 24px));max-height:92vh;padding:0;border:0;border-radius:var(--r-xl);box-shadow:var(--shadow-lg)}
+    dialog::backdrop{background:rgba(13,31,30,.55);backdrop-filter:blur(4px)}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 26px;border-bottom:1px solid var(--line)}
+    .modal-head h2{font-size:17px;font-weight:700}
+    .close{width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--white);font-size:18px;color:var(--soft)}.close:hover{background:#f0f2f1}
+    .modal-body{padding:24px;overflow-y:auto;max-height:65vh}
+    .modal-foot{display:flex;justify-content:flex-end;gap:9px;padding:16px 24px;border-top:1px solid var(--line);background:#fafbfa;border-radius:0 0 var(--r-xl) var(--r-xl)}
+    .issues-box{margin:0 0 18px;padding:14px 16px;border-radius:11px;background:#fffbec;color:#6e4b00;font-size:12px;border:1px solid #f5e0a0}
+    .issues-box.ok{background:#eefaf4;color:#145c3a;border-color:#b8e8d0}
+    /* VIEWER MODAL */
+    #viewerModal{width:min(95vw,1100px)}
+    .viewer-body{display:grid;grid-template-columns:1fr 360px;gap:0;max-height:78vh}
+    .viewer-preview{background:#1a1a1a;display:flex;align-items:center;justify-content:center;min-height:400px;border-radius:0 0 0 var(--r-xl);overflow:hidden}
+    .viewer-preview img{max-width:100%;max-height:75vh;object-fit:contain}
+    .viewer-preview iframe{width:100%;height:75vh;border:0}
+    .viewer-preview .no-preview{color:#666;font-size:13px;text-align:center;padding:40px}
+    .viewer-data{padding:24px;overflow-y:auto;border-left:1px solid var(--line)}
+    .viewer-field{margin-bottom:14px}
+    .viewer-field label{display:block;font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+    .viewer-field span{font-size:13px;font-weight:500}
+    .viewer-field.money span{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--ink)}
+    .viewer-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+    /* TOAST */
+    .toast{position:fixed;right:22px;bottom:22px;z-index:200;padding:13px 18px;border-radius:12px;color:#fff;background:var(--ink);box-shadow:var(--shadow);transform:translateY(20px);opacity:0;transition:.25s;font-size:13px;font-weight:600}
+    .toast.show{transform:none;opacity:1}
+    /* PROGRESS */
+    .progress{height:5px;margin-top:12px;overflow:hidden;border-radius:99px;background:#e0e8e4;width:min(360px,100%)}
+    .progress i{display:block;width:0;height:100%;background:var(--green);transition:.3s}
+    /* ARCHIVE VIEWS */
+    .arch-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+    .view-toggle{display:flex;gap:4px;background:#f0f2f0;padding:4px;border-radius:10px}
+    .view-toggle button{width:34px;height:30px;border:0;border-radius:7px;background:transparent;color:var(--soft);font-size:15px;display:grid;place-items:center;transition:.15s}
+    .view-toggle button.active{background:var(--white);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    /* Grid view */
+    .archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .arch-card{border:1px solid var(--line);border-radius:14px;background:var(--white);overflow:hidden;cursor:pointer;transition:.15s}
+    .arch-card:hover{border-color:var(--green);box-shadow:0 4px 16px rgba(31,169,110,.1);transform:translateY(-1px)}
+    .arch-thumb{width:100%;height:130px;display:flex;align-items:center;justify-content:center;background:#f4f6f4;font-size:42px;position:relative;overflow:hidden}
+    .arch-thumb img{width:100%;height:100%;object-fit:cover}
+    .arch-thumb .arch-ext{position:absolute;bottom:8px;right:8px;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(13,31,30,.7);color:#fff}
+    .arch-info{padding:11px 13px;border-top:1px solid var(--line)}
+    .arch-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .arch-meta{font-size:11px;color:var(--soft);margin-top:2px}
+    .arch-ncf{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* Detail view */
+    .archive-detail{display:grid;gap:10px}
+    .arch-detail-row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:14px 16px;background:var(--white);border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:.15s}
+    .arch-detail-row:hover{border-color:var(--green);background:#f8fdfb}
+    .arch-detail-thumb{width:64px;height:64px;border-radius:10px;overflow:hidden;background:#f4f6f4;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+    .arch-detail-thumb img{width:100%;height:100%;object-fit:cover}
+    .arch-detail-info{min-width:0}
+    .arch-detail-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .arch-detail-sub{font-size:11px;color:var(--soft);margin-top:3px}
+    .arch-detail-ncf{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--blue);margin-top:2px}
+    .arch-detail-amount{text-align:right;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;white-space:nowrap}
+    .arch-detail-status{font-size:10px;margin-top:4px;text-align:right}
+    /* List view */
+    .archive-list{border:1px solid var(--line);border-radius:14px;background:var(--white);overflow:hidden}
+    .arch-list-row{display:grid;grid-template-columns:32px 2fr 1.2fr 1fr 90px 80px 36px;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer;transition:.15s}
+    .arch-list-row:last-child{border-bottom:0}
+    .arch-list-row:hover{background:#f8fdfb}
+    .arch-list-head{background:#f6f8f6;font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;cursor:default}
+    .arch-list-head:hover{background:#f6f8f6}
+    .arch-list-ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    /* QR Modal */
+    #qrModal{width:min(440px,calc(100% - 24px))}
+    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0}
+    .qr-box{padding:16px;background:var(--white);border:2px solid var(--line);border-radius:16px;display:inline-block}
+    .qr-steps{display:grid;gap:10px;width:100%;margin-top:8px}
+    .qr-step{display:flex;align-items:flex-start;gap:12px;font-size:13px}
+    .qr-step-num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0}
+    .phone-btn{background:linear-gradient(135deg,#1a3b8a,#2d6be4);border-color:transparent;color:#fff;gap:9px}
+    .phone-btn:hover{background:linear-gradient(135deg,#163080,#255ecc)}
+    /* ISSUE TOOLTIP */
+    .issue-tip{
+      position:fixed;z-index:999;
+      background:var(--white);border:1px solid var(--line);
+      border-radius:12px;box-shadow:var(--shadow-lg);
+      padding:14px 16px;min-width:280px;max-width:360px;
+      font-size:11px;line-height:1.7;pointer-events:none;
+      animation:fadeIn .15s ease;
+    }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    /* MOBILE */
+    .mobile-menu{display:none}
+    /* ISSUE TOOLTIP */
+    .issue-tip{
+      position:fixed;z-index:999;
+      background:var(--white);border:1px solid var(--line);
+      border-radius:12px;box-shadow:var(--shadow-lg);
+      padding:14px 16px;min-width:280px;max-width:360px;
+      font-size:11px;line-height:1.7;pointer-events:none;
+      animation:fadeIn .15s ease;
+    }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    /* MOBILE */
+    .mobile-menu{display:none}
+    @media(max-width:980px){.app{grid-template-columns:1fr}.sidebar{position:fixed;z-index:40;left:-270px;width:260px;transition:.25s}.menu-open .sidebar{left:0}.mobile-menu{display:flex}.stats{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}.report-grid{grid-template-columns:repeat(2,1fr)}.content{padding:18px}.viewer-body{grid-template-columns:1fr}}
+    @media(max-width:600px){.stats,.report-grid,.form-grid{grid-template-columns:1fr}.topbar p{display:none}.top-actions .btn:not(.primary){display:none}.toolbar{flex-direction:column}.search{width:100%}.content{padding:14px}}
+    /* iOS SAFE AREA */
+    @supports(padding:env(safe-area-inset-top)){
+      .topbar{padding-top:max(0px,env(safe-area-inset-top));height:calc(72px + env(safe-area-inset-top))}
+      .sidebar{padding-top:env(safe-area-inset-top)}
+      .content{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+    }
+    /* IOS INSTALL BANNER */
+    .ios-banner{
+      display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;
+      background:var(--ink);color:#fff;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));
+      font-size:13px;align-items:center;gap:12px;
+      box-shadow:0 -4px 24px rgba(0,0,0,.3);
+    }
+    .ios-banner.show{display:flex}
+    .ios-banner-ico{font-size:32px;flex-shrink:0}
+    .ios-banner-text strong{display:block;font-size:14px;font-weight:700;margin-bottom:2px}
+    .ios-banner-text span{color:#9abfb9;font-size:12px}
+    .ios-banner-close{margin-left:auto;background:transparent;border:1px solid #3a5552;color:#9abfb9;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    /* MOBILE TOUCH IMPROVEMENTS */
+    @media(max-width:600px){
+      .btn{min-height:44px}
+      .chip{min-height:36px;padding:8px 14px}
+      .table td,.table th{padding:10px 10px}
+      .arch-card{border-radius:10px}
+      dialog{width:100%;max-height:95vh;border-radius:var(--r-xl) var(--r-xl) 0 0;position:fixed;bottom:0;margin:0}
+      .modal-body{max-height:70vh}
+      .viewer-body{flex-direction:column;max-height:none}
+      .viewer-preview{min-height:240px;max-height:40vh}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">
+        <div class="logo-badge">📊</div>
+        <span><strong>Rivier Conta</strong><small>Sistema fiscal DGII</small></span>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-view="dashboard"><span class="ico">🏠</span>Resumen</button>
+        <button class="nav-btn" data-view="documents"><span class="ico">📋</span>Comprobantes</button>
+        <button class="nav-btn" data-view="archive"><span class="ico">🗂️</span>Archivo de facturas</button>
+        <button class="nav-btn" data-view="reports"><span class="ico">📤</span>Reportes DGII</button>
+        <div class="nav-div"></div>
+        <button class="nav-btn" data-view="settings"><span class="ico">⚙️</span>Configuración</button>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <b>🗄️ Base de datos local · IA: Google</b>
+      <div class="db-stat"><span>Comprobantes</span><span id="dbStatDocs">0</span></div>
+      <div class="db-stat"><span>Archivos guardados</span><span id="dbStatFiles">0</span></div>
+      <div class="db-stat"><span>Espacio usado</span><span id="dbStatSize">0 KB</span></div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn sm mobile-menu" id="mobileMenu">☰</button>
+        <div><h1 id="pageTitle">Resumen contable</h1><p>Revisa, valida y prepara tus formatos informativos.</p></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="demoBtn">Cargar ejemplo</button>
+        <button class="btn primary" id="uploadTop">＋ Subir facturas</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <section class="view active" id="dashboard">
+        <div id="noKeyBanner" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:#fff6dc;border:1px solid #f5e0a0;color:#6e4b00;display:none;align-items:center;justify-content:space-between;gap:12px">
+          <span>⚠️ <b>Sin API Key de Google:</b> la extracción automática con IA no está activa. Es <b>gratis</b> — solo necesitas una cuenta de Google.</span>
+          <button class="btn sm" onclick="showView('settings')">⚙️ Configurar</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="stat-lbl">Comprobantes</span><strong id="sTotal">0</strong><small id="sPeriod">Período actual</small></div>
+          <div class="stat"><span class="stat-lbl">Total facturado</span><strong id="sAmount">RD$0</strong><small>Base + impuestos</small></div>
+          <div class="stat"><span class="stat-lbl">ITBIS total</span><strong id="sItbis">RD$0</strong><small>Crédito / débito fiscal</small></div>
+          <div class="stat alert"><span class="stat-lbl">Requieren atención</span><strong id="sIssues">0</strong><small id="sIssuesLbl">Sin errores</small></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Cargar comprobantes</h2><button class="btn sm" id="manualBtn">＋ Manual</button></div>
+            <div class="card-body">
+              <label class="drop" id="dropZone">
+                <input type="file" id="fileInput" multiple accept=".xml,.csv,.txt,.json,.pdf,.png,.jpg,.jpeg,.webp">
+                <div class="drop-icon">⇧</div>
+                <h3>Arrastra tus facturas aquí</h3>
+                <p>PDF, imágenes, XML, CSV — se guardan en la base de datos</p>
+                <span class="btn primary sm">Seleccionar archivos</span>
+                <div class="progress"><i id="progress"></i></div>
+              </label>
+              <div class="ai-panel">
+                <div class="ai-panel-head">
+                  <div class="ai-ico">✨</div>
+                  <div><strong>Extracción con IA</strong><span>Gemini 2.5 Flash (Google) · Lee imágenes y PDF, extrae datos y los guarda automáticamente</span></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <button class="btn ai-btn sm" id="aiUploadBtn">✨ Subir imagen / PDF</button>
+                  <input type="file" id="aiFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none" multiple>
+                  <span style="font-size:11px;color:#5a6a9a">El archivo original queda guardado y consultable</span>
+                </div>
+                <div class="ai-output" id="aiOutput" style="display:none"></div>
+                <div class="ai-status" id="aiStatus" style="display:none"></div>
+              </div>
+              <div class="privacy-note"><span>🗄️</span><span><b>Base de datos IndexedDB.</b> Los archivos originales se guardan en tu navegador. Sin conexión a servidores externos.</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Validaciones automáticas</h2></div>
+            <div class="card-body activity">
+              <div class="act"><span class="act-i">✓</span><div><p>Validación RNC / Cédula</p><small>Estructura y dígito verificador</small></div></div>
+              <div class="act"><span class="act-i">#</span><div><p>Clasificación NCF / e-NCF</p><small>Tipo y estructura del comprobante</small></div></div>
+              <div class="act"><span class="act-i">⧉</span><div><p>Detección de duplicados</p><small>RNC + NCF repetidos</small></div></div>
+              <div class="act"><span class="act-i">∑</span><div><p>Cuadre matemático</p><small>Subtotal + ITBIS = Total</small></div></div>
+              <div class="act"><span class="act-i">🗂️</span><div><p>Archivo digital</p><small>PDF e imágenes guardados y consultables</small></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div class="card-head"><h2>Últimos comprobantes</h2><button class="btn sm" onclick="showView('documents')">Ver todos →</button></div>
+          <div id="recentTable"></div>
+        </div>
+      </section>
+
+      <!-- DOCUMENTS -->
+      <section class="view" id="documents">
+        <div class="toolbar">
+          <input class="search" id="search" placeholder="Buscar por RNC, NCF, proveedor…">
+          <div class="filters">
+            <button class="chip active" data-status="all">Todos</button>
+            <button class="chip" data-status="ok">✓ Listos</button>
+            <button class="chip" data-status="warn">! Revisar</button>
+            <button class="chip" data-status="error">× Errores</button>
+            <button class="chip" data-dir="purchase">Compras</button>
+            <button class="chip" data-dir="sale">Ventas</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="btn sm ai-btn" id="aiBulkBtn">✨ IA masiva</button>
+            <button class="btn sm" id="manualBtn2">＋ Manual</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr>
+              <th>Estado</th><th>Tipo</th><th>Fecha</th><th>RNC / Cédula</th><th>Nombre</th><th>NCF</th>
+              <th class="money">Subtotal</th><th class="money">ITBIS</th><th class="money">Total</th>
+              <th>Archivo</th><th></th>
+            </tr></thead>
+            <tbody id="docRows"></tbody>
+          </table>
+          <div class="sum-row" id="sumRow" style="display:none">
+            <div class="sum-item"><small>Registros</small><span id="sumCnt">0</span></div>
+            <div class="sum-item"><small>Subtotal</small><span id="sumSub">RD$0</span></div>
+            <div class="sum-item"><small>ITBIS</small><span id="sumIt">RD$0</span></div>
+            <div class="sum-item"><small>Total</small><span id="sumTot">RD$0</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ARCHIVE -->
+      <section class="view" id="archive">
+        <div class="arch-toolbar">
+          <input class="search" id="archSearch" placeholder="Buscar por nombre, proveedor, NCF…" style="max-width:280px">
+          <div class="filters">
+            <button class="chip active" data-atype="all">Todos</button>
+            <button class="chip" data-atype="pdf">PDF</button>
+            <button class="chip" data-atype="img">Imágenes</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+            <span style="font-size:12px;color:var(--soft)" id="archCount">0 archivos</span>
+            <div class="view-toggle">
+              <button id="viewGrid" class="active" title="Miniaturas" onclick="setArchView('grid')">⊞</button>
+              <button id="viewDetail" title="Detalle" onclick="setArchView('detail')">▤</button>
+              <button id="viewList" title="Lista" onclick="setArchView('list')">☰</button>
+            </div>
+            <button class="btn sm phone-btn" onclick="openQRModal()">
+              📱 Subir desde teléfono
+            </button>
+          </div>
+        </div>
+        <div id="archiveContainer"></div>
+      </section>
+
+      <!-- REPORTS -->
+      <section class="view" id="reports">
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-head"><h2>Período y contribuyente</h2></div>
+          <div class="card-body form-grid">
+            <div class="field"><label>RNC del informante</label><input id="reportRnc" maxlength="11" placeholder="Ej. 101234567"></div>
+            <div class="field"><label>Período</label><input id="reportPeriod" type="month"></div>
+          </div>
+        </div>
+        <div class="report-grid">
+          <article class="report"><span class="rnum g">606</span><h3>Compras y gastos</h3><p>Compras de bienes, costos, ITBIS y retenciones ISR.</p><div class="rcnt" id="count606">—</div><button class="btn dark" onclick="exportReport('606')">⬇ Generar TXT 606</button></article>
+          <article class="report"><span class="rnum b">607</span><h3>Ventas e ingresos</h3><p>Operaciones de venta, NCF emitidos y formas de cobro.</p><div class="rcnt" id="count607">—</div><button class="btn dark" onclick="exportReport('607')">⬇ Generar TXT 607</button></article>
+          <article class="report"><span class="rnum">608</span><h3>NCF anulados</h3><p>Comprobantes anulados con tipo de anulación.</p><div class="rcnt" id="count608">—</div><button class="btn dark" onclick="exportReport('608')">⬇ Generar TXT 608</button></article>
+          <article class="report"><span class="rnum gold">609</span><h3>Pagos al exterior</h3><p>Servicios al exterior, renta bruta y retención ISR.</p><div class="rcnt" id="count609">—</div><button class="btn dark" onclick="exportReport('609')">⬇ Generar TXT 609</button></article>
+          <article class="report"><span class="rnum teal">CSV</span><h3>Libro de revisión</h3><p>Todos los registros con incidencias. Compatible con Excel.</p><div class="rcnt" id="countCSV">—</div><button class="btn dark" onclick="exportCSV()">⬇ Exportar CSV</button></article>
+          <article class="report"><span class="rnum xl">XLS</span><h3>Excel con formato</h3><p>Libro Excel: 606, 607, Resumen e Incidencias separados.</p><div class="rcnt">Múltiples hojas</div><button class="btn primary" onclick="exportExcel()">⬇ Exportar Excel</button></article>
+        </div>
+        <div class="privacy-note" style="margin-top:18px"><span>ℹ️</span><span>Los TXT son borradores. Pásalos por la prevalidación de la DGII antes de remitirlos.</span></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="settings">
+        <div class="card settings-wrap">
+          <div class="card-head"><h2>Configuración del sistema</h2></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><label>Nombre / razón social</label><input id="companyName" value="Rivier Plasencia Rodríguez"></div>
+              <div class="field"><label>RNC o cédula</label><input id="companyRnc" maxlength="11" placeholder="Identificación fiscal"></div>
+              <div class="field"><label>Período de trabajo</label><input id="workPeriod" type="month"></div>
+              <div class="field"><label>Moneda</label><select id="currency"><option value="DOP">Peso dominicano (RD$)</option><option value="USD">Dólar estadounidense</option></select></div>
+              <div class="field full" style="grid-column:1/-1">
+                <label>Proveedor de IA <span style="color:var(--green);font-size:10px">— ✨ Gratis con Groq</span></label>
+                <select id="aiProvider" style="width:100%;margin-top:6px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r);background:var(--white);font-size:14px">
+                  <option value="groq">Groq — Llama 4 Scout (Gratis ✓ Recomendado)</option>
+                  <option value="google">Google Gemini 2.5 Flash</option>
+                </select>
+              </div>
+              <div class="field full" style="grid-column:1/-1">
+                <label>API Key <span style="color:var(--soft);font-size:10px;font-weight:400;text-transform:none">— pega aquí tu clave completa</span></label>
+                <textarea
+                  id="apiKey"
+                  rows="3"
+                  placeholder="Pega aquí tu clave completa&#10;Ejemplo Groq:   gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx…&#10;Ejemplo Google: AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxx…"
+                  style="width:100%;margin-top:6px;padding:14px;border:2px solid var(--line);border-radius:var(--r);background:var(--white);font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical;line-height:1.6;transition:.15s;word-break:break-all;color:var(--ink)"
+                  onfocus="this.style.borderColor='var(--green)';this.style.boxShadow='0 0 0 3px rgba(31,169,110,.12)'"
+                  onblur="this.style.borderColor='var(--line)';this.style.boxShadow='none'"
+                ></textarea>
+                <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+                  <button type="button" class="btn primary" id="testKeyBtn">✓ Probar y guardar clave</button>
+                  <button type="button" class="btn sm danger" onclick="document.getElementById('apiKey').value='';window._apiKey='';localStorage.removeItem('rp_apikey');document.getElementById('apiKeyStatus').style.display='none';toast('Clave eliminada')">🗑 Limpiar</button>
+                </div>
+                <p style="margin-top:10px;font-size:11px;color:var(--soft);line-height:1.7">
+                  Groq gratis (sin tarjeta): <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);font-weight:600">console.groq.com/keys</a> → Create API Key → copia la clave que empieza con <code style="background:#f0f2f0;padding:1px 5px;border-radius:4px">gsk_</code><br>
+                  Google Gemini: <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue);font-weight:600">aistudio.google.com/apikey</a> → Create API Key → copia la que empieza con <code style="background:#f0f2f0;padding:1px 5px;border-radius:4px">AIzaSy</code>
+                </p>
+                <div id="providerHelp" style="display:none"></div>
+              </div>
+            </div>
+            <div id="apiKeyStatus" style="display:none;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px"></div>
+            <div class="rules">
+              <div class="rule"><b>NCF tradicional</b><span>11 caracteres: B + 2 tipo + 8 secuencia.</span></div>
+              <div class="rule"><b>e-NCF</b><span>13 caracteres: E + 2 tipo + 10 secuencia.</span></div>
+              <div class="rule"><b>RNC / Cédula</b><span>RNC 9 dígitos o cédula 11, con dígito verificador.</span></div>
+            </div>
+            <div style="margin-top:22px">
+              <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px">
+                <button class="btn primary" id="saveSettings">Guardar configuración</button>
+              </div>
+              <div style="padding:16px;border:1px solid var(--line);border-radius:14px;background:#f8faf8">
+                <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--ink)">📦 Respaldo y restauración</div>
+                <p style="font-size:11px;color:var(--soft);margin-bottom:12px;line-height:1.6">
+                  Exporta para hacer una copia de seguridad o para llevar tus datos a otro navegador o computadora. El archivo incluye todos los comprobantes y los archivos de facturas originales.
+                </p>
+                <div style="display:flex;gap:9px;flex-wrap:wrap">
+                  <button class="btn dark" id="exportBackup">⬇ Exportar respaldo</button>
+                  <label class="btn" style="cursor:pointer">
+                    ⬆ Importar respaldo
+                    <input type="file" id="importBackupInput" accept=".json" style="display:none">
+                  </label>
+                </div>
+                <div id="importStatus" style="display:none;margin-top:10px;padding:11px 14px;border-radius:10px;font-size:12px"></div>
+              </div>
+              <div style="margin-top:10px">
+                <button class="btn danger" id="clearData">🗑 Borrar todos los datos</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- EDITOR MODAL -->
+<dialog id="editor">
+  <div class="modal-head"><h2>Revisar comprobante</h2><button class="close" id="closeEditor">×</button></div>
+  <div class="modal-body">
+    <div class="issues-box" id="editIssues"></div>
+    <input type="hidden" id="eId">
+    <div class="form-grid">
+      <div class="field"><label>Movimiento</label><select id="eDirection"><option value="purchase">Compra / 606</option><option value="sale">Venta / 607</option><option value="void">Anulado / 608</option><option value="foreign">Pago exterior / 609</option></select></div>
+      <div class="field"><label>Fecha</label><input id="eDate" type="date"></div>
+      <div class="field"><label>RNC o cédula</label><input id="eRnc" maxlength="11"></div>
+      <div class="field"><label>Proveedor / cliente</label><input id="eName"></div>
+      <div class="field"><label>NCF / e-NCF</label><input id="eNcf" maxlength="13"></div>
+      <div class="field"><label>Tipo de gasto 606</label><select id="eExpense"><option value="01">01 · Gastos de personal</option><option value="02">02 · Trabajos, suministros y servicios</option><option value="03">03 · Arrendamientos</option><option value="04">04 · Activos fijos</option><option value="05">05 · Gastos de representación</option><option value="06">06 · Otras deducciones admitidas</option><option value="07">07 · Gastos financieros</option><option value="08">08 · Gastos extraordinarios</option><option value="09">09 · Compras y gastos del costo</option><option value="10">10 · Adquisiciones de activos</option><option value="11">11 · Gastos de seguros</option></select></div>
+      <div class="field"><label>Subtotal</label><input id="eSubtotal" type="number" step=".01" min="0"></div>
+      <div class="field"><label>ITBIS facturado</label><input id="eItbis" type="number" step=".01" min="0"></div>
+      <div class="field"><label>ITBIS retenido</label><input id="eItbisWithheld" type="number" step=".01" min="0"></div>
+      <div class="field"><label>ISR retenido</label><input id="eIsrWithheld" type="number" step=".01" min="0"></div>
+      <div class="field"><label>Total</label><input id="eTotal" type="number" step=".01" min="0"></div>
+      <div class="field"><label>Forma de pago 607</label><select id="ePayment"><option value="cash">Efectivo</option><option value="bank">Banco / transferencia</option><option value="card">Tarjeta</option><option value="credit">Venta a crédito</option><option value="other">Otra</option></select></div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn" id="closeEditorBtn">Cancelar</button>
+    <button class="btn danger" id="deleteDoc">Eliminar</button>
+    <button class="btn primary" id="saveDoc">Guardar y validar</button>
+  </div>
+</dialog>
+
+<!-- FILE VIEWER MODAL -->
+<dialog id="viewerModal">
+  <div class="modal-head"><h2 id="viewerTitle">Ver factura</h2><button class="close" onclick="document.getElementById('viewerModal').close()">×</button></div>
+  <div class="viewer-body modal-body" style="padding:0">
+    <div class="viewer-preview" id="viewerPreview"></div>
+    <div class="viewer-data" id="viewerData"></div>
+  </div>
+</dialog>
+
+<!-- AI BULK MODAL -->
+<dialog id="aiBulkModal">
+  <div class="modal-head"><h2>✨ Extracción masiva con IA</h2><button class="close" id="closeBulk">×</button></div>
+  <div class="modal-body">
+    <p style="color:var(--soft);font-size:13px;margin-bottom:16px">Sube varias facturas. La IA extrae los datos y guarda el archivo original en la base de datos.</p>
+    <label class="drop" id="bulkDropZone" style="min-height:140px">
+      <input type="file" id="bulkFileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.webp">
+      <div class="drop-icon">📂</div><h3>Selecciona múltiples facturas</h3><p>PDF, PNG, JPG, WEBP</p>
+      <span class="btn ai-btn sm">✨ Seleccionar archivos</span>
+    </label>
+    <div id="bulkProg" style="margin-top:16px;display:none">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px" id="bulkLbl">Procesando…</div>
+      <div class="progress" style="width:100%"><i id="bulkBar"></i></div>
+      <div id="bulkLog" style="margin-top:12px;max-height:220px;overflow-y:auto;display:grid;gap:4px;font-size:11px"></div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn" id="closeBulkBtn">Cerrar</button></div>
+</dialog>
+
+<!-- QR / PHONE UPLOAD MODAL -->
+<dialog id="qrModal">
+  <div class="modal-head"><h2>📱 Subir facturas desde tu teléfono</h2><button class="close" onclick="document.getElementById('qrModal').close()">×</button></div>
+  <div class="modal-body">
+    <div class="qr-wrap">
+      <p style="font-size:13px;color:var(--soft);text-align:center;margin-bottom:4px">
+        Escanea este código QR con la cámara de tu teléfono para abrir Rivier Conta en el móvil y subir fotos de facturas directamente.
+      </p>
+      <div class="qr-box" id="qrContainer">
+        <canvas id="qrCanvas" width="200" height="200"></canvas>
+      </div>
+      <div id="qrUrl" style="font-size:11px;color:var(--soft);word-break:break-all;text-align:center;max-width:340px"></div>
+      <div class="qr-steps">
+        <div class="qr-step"><span class="qr-step-num">1</span><span>Abre la cámara de tu teléfono y apunta al código QR de arriba.</span></div>
+        <div class="qr-step"><span class="qr-step-num">2</span><span>Se abrirá Rivier Conta en el navegador de tu teléfono.</span></div>
+        <div class="qr-step"><span class="qr-step-num">3</span><span>Toca <b>"Subir imagen / PDF"</b> y toma la foto de la factura o selecciónala de la galería.</span></div>
+        <div class="qr-step"><span class="qr-step-num">4</span><span>La IA extrae los datos automáticamente y los guarda. Cuando abras el sistema en tu PC, el respaldo incluirá esas facturas.</span></div>
+      </div>
+      <div id="qrInfo" style="padding:12px 16px;background:#fff0ef;border:1px solid #f0cccb;border-radius:10px;font-size:12px;color:#8b1f1c;width:100%;margin-top:4px">
+        <b>⚠ El QR no funciona abriendo el archivo directamente.</b><br>
+        Para usarlo desde el teléfono necesitas iniciar el servidor local.<br>
+        Usa el archivo <b>iniciar_servidor.bat</b> que descargaste junto con la app.
+      </div>
+      <div style="padding:12px 16px;background:#eef9f3;border:1px solid #b8e8d0;border-radius:10px;font-size:12px;color:#1a6644;width:100%;margin-top:4px">
+        <b>✓ Con el servidor activo:</b> El QR funciona y el teléfono se conecta directamente. Asegúrate de que el teléfono esté en la misma red WiFi que la PC.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+        <button class="btn sm primary" id="copyLinkBtn" onclick="copyPhoneLink()">📋 Copiar link</button>
+        <button class="btn sm" onclick="document.getElementById('qrModal').close()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<!-- iOS INSTALL BANNER -->
+<div class="ios-banner" id="iosBanner">
+  <span class="ios-banner-ico">📊</span>
+  <div class="ios-banner-text">
+    <strong>Agregar a inicio</strong>
+    <span>Toca <b>⎋ Compartir</b> y luego <b>"Agregar a pantalla de inicio"</b> para instalarla como app</span>
+  </div>
+  <button class="ios-banner-close" onclick="dismissIOSBanner()">Entendido</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  DATABASE — IndexedDB wrapper
+// ════════════════════════════════════════════
+const DB_NAME="rivier_conta", DB_VER=2;
+let db = null;
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    let req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      let d = e.target.result;
+      // Store for document metadata
+      if(!d.objectStoreNames.contains("docs")){
+        let s = d.createObjectStore("docs",{keyPath:"id"});
+        s.createIndex("date","date");
+        s.createIndex("direction","direction");
+        s.createIndex("status","status");
+      }
+      // Store for raw files (images, PDFs)
+      if(!d.objectStoreNames.contains("files")){
+        let f = d.createObjectStore("files",{keyPath:"id"});
+        f.createIndex("docId","docId");
+      }
+    };
+    req.onsuccess = e => { db=e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbTx(store, mode="readonly"){
+  return db.transaction(store, mode).objectStore(store);
+}
+
+function dbGet(store, key){
+  return new Promise((res,rej)=>{let r=dbTx(store).get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+}
+function dbPut(store, val){
+  return new Promise((res,rej)=>{let r=dbTx(store,"readwrite").put(val);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+}
+function dbDelete(store, key){
+  return new Promise((res,rej)=>{let r=dbTx(store,"readwrite").delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+}
+function dbGetAll(store){
+  return new Promise((res,rej)=>{let r=dbTx(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+}
+
+async function saveDoc(doc){
+  await dbPut("docs", doc);
+  // Also keep in-memory array in sync
+  let idx = docs.findIndex(d=>d.id===doc.id);
+  if(idx>=0) docs[idx]=doc; else docs.push(doc);
+}
+
+async function saveFile(docId, file){
+  // Read file as ArrayBuffer
+  let ab = await file.arrayBuffer();
+  let rec = {
+    id: docId,           // same id as its document
+    docId: docId,
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    data: ab,
+    saved: Date.now()
+  };
+  await dbPut("files", rec);
+  return rec;
+}
+
+async function loadAllDocs(){
+  let all = await dbGetAll("docs");
+  docs = all;
+  return docs;
+}
+
+async function deleteDocAndFile(id){
+  await dbDelete("docs", id);
+  await dbDelete("files", id).catch(()=>{});
+  docs = docs.filter(d=>d.id!==id);
+}
+
+async function updateDbStats(){
+  let allDocs = await dbGetAll("docs");
+  let allFiles = await dbGetAll("files");
+  let totalBytes = allFiles.reduce((a,f)=>a+(f.size||0),0);
+  let kb = (totalBytes/1024).toFixed(0);
+  let display = totalBytes > 1048576 ? (totalBytes/1048576).toFixed(1)+" MB" : kb+" KB";
+  $("#dbStatDocs").textContent = allDocs.length;
+  $("#dbStatFiles").textContent = allFiles.length;
+  $("#dbStatSize").textContent = display;
+}
+
+// ════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ════════════════════════════════════════════
+const NCF_TYPES={B01:"Crédito fiscal",B02:"Consumo",B03:"Nota de débito",B04:"Nota de crédito",B11:"Proveedores informales",B12:"Registro único de ingresos",B13:"Gastos menores",B14:"Regímenes especiales",B15:"Gubernamental",B16:"Exportaciones",B17:"Pagos al exterior",E31:"Crédito fiscal electrónico",E32:"Consumo electrónico",E33:"Nota de débito electrónica",E34:"Nota de crédito electrónica",E41:"Compras electrónicas",E43:"Gastos menores electrónicos",E44:"Regímenes especiales electrónicos",E45:"Gubernamental electrónico",E46:"Exportaciones electrónicas",E47:"Pagos al exterior electrónicos"};
+let docs=[], currentFilter="all", currentDir="all";
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const money=n=>"RD$"+Number(n||0).toLocaleString("es-DO",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// ════════════════════════════════════════════
+//  VALIDATION
+// ════════════════════════════════════════════
+function clean(v){return String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"")}
+function validRNC(v){
+  v=clean(v);
+  if(v.length===9){let w=[7,9,8,6,5,4,3,2],s=w.reduce((a,x,i)=>a+x*+v[i],0),r=11-s%11,d=r===10?9:r===11?0:r;return d===+v[8]}
+  if(v.length===11){let s=0;for(let i=0;i<10;i++){let n=+v[i]*(i%2?2:1);s+=n>9?n-9:n}return(10-s%10)%10===+v[10]}
+  return false;
+}
+function ncfInfo(v){
+  v=clean(v);
+  // NCF tradicional: B + 2 dígitos tipo + 8 secuencia = 11 chars
+  // e-NCF:           E + 2 dígitos tipo + 10 secuencia = 13 chars
+  let isNCF=/^B\d{10}$/.test(v);
+  let isENCF=/^E\d{12}$/.test(v);
+  let valid=isNCF||isENCF;
+  let code=v.slice(0,3);
+
+  // Detectar ceros extra en el medio (IA a veces inserta 000 entre tipo y secuencia)
+  // Ej: B01000000123 (12 chars) en lugar de B0100000123 (11)
+  let hasExtraZeros=false;
+  if(!valid && v.length>0){
+    // Intentar corregir NCF con ceros extra
+    let corrected=v.replace(/^([BE])(\d{2})0+(\d{7,10})$/,(m,p,t,s)=>{
+      if(p==="B") return p+t+s.slice(-8).padStart(8,"0");
+      if(p==="E") return p+t+s.slice(-10).padStart(10,"0");
+      return m;
+    });
+    if(corrected!==v && (/^B\d{10}$/.test(corrected)||/^E\d{12}$/.test(corrected))){
+      hasExtraZeros=true;
+      code=corrected.slice(0,3);
+    }
+  }
+  return{valid,isNCF,isENCF,hasExtraZeros,type:NCF_TYPES[code]||"Tipo no reconocido",code,len:v.length}
+}
+
+// Tabla de errores con descripción y solución
+const ERROR_SOLUTIONS={
+  "La IA tuvo baja confianza leyendo esta factura — verifica los datos contra la imagen original":{
+    desc:"La foto está borrosa, doblada o con mala luz, y la IA no estuvo segura de algunos números (RNC, NCF o montos).",
+    fix:"Abre el visor de la factura (clic en el badge PDF/IMG), compara cada dígito del RNC y NCF con la imagen, y corrige manualmente lo que esté mal. Si tienes una mejor foto, puedes reescanear con el botón 🔄."
+  },
+  "Falta la fecha":{
+    desc:"El comprobante no tiene fecha de emisión.",
+    fix:"Abre el comprobante (•••) y escribe la fecha en formato AAAA-MM-DD."
+  },
+  "Falta RNC o cédula":{
+    desc:"No se encontró el RNC o cédula del proveedor.",
+    fix:"Busca el RNC en la factura original y agrégalo manualmente."
+  },
+  "RNC/cédula con dígito verificador inválido":{
+    desc:"El número de RNC o cédula tiene un error en su estructura o dígito verificador.",
+    fix:"Verifica el RNC en el portal de la DGII (dgii.gov.do/BuscaRNC). Las personas físicas tienen cédula de 11 dígitos; las empresas RNC de 9 dígitos."
+  },
+  "RNC debe tener 9 dígitos (persona jurídica)":{
+    desc:"El RNC ingresado no tiene la longitud correcta para una empresa.",
+    fix:"El RNC de empresas siempre tiene exactamente 9 dígitos. Verifica en la factura original."
+  },
+  "Cédula debe tener 11 dígitos (persona física)":{
+    desc:"La cédula ingresada no tiene la longitud correcta.",
+    fix:"La cédula dominicana siempre tiene 11 dígitos. Verifica el número completo incluyendo el último dígito verificador."
+  },
+  "Falta NCF":{
+    desc:"No se encontró el número de comprobante fiscal.",
+    fix:"Busca en la factura original el NCF (empieza con B) o e-NCF (empieza con E) y agrégalo manualmente."
+  },
+  "NCF debe tener 11 caracteres (B + 2 tipo + 8 secuencia)":{
+    desc:"El NCF tradicional tiene una longitud incorrecta. Debe tener exactamente 11 caracteres.",
+    fix:"El formato correcto es: letra B + 2 dígitos de tipo + 8 dígitos de secuencia. Ejemplo: B0100000123. Verifica en la factura original."
+  },
+  "e-NCF debe tener 13 caracteres (E + 2 tipo + 10 secuencia)":{
+    desc:"El e-NCF electrónico tiene una longitud incorrecta. Debe tener exactamente 13 caracteres.",
+    fix:"El formato correcto es: letra E + 2 dígitos de tipo + 10 dígitos de secuencia. Ejemplo: E310000001234. Verifica en la factura original."
+  },
+  "NCF con ceros extra detectados — corregir manualmente":{
+    desc:"La IA insertó ceros extra en el NCF, haciendo que tenga más caracteres de lo normal.",
+    fix:"Abre el comprobante (•••) y corrige el NCF quitando los ceros sobrantes en el medio. Debe quedar con 11 caracteres (NCF) o 13 (e-NCF)."
+  },
+  "Tipo de NCF no reconocido":{
+    desc:"Los primeros 3 caracteres del NCF no corresponden a ningún tipo válido de la DGII.",
+    fix:"Tipos válidos NCF: B01-B04, B11-B17. Tipos válidos e-NCF: E31-E34, E41, E43-E47. Verifica los primeros 3 caracteres del comprobante."
+  },
+  "NCF duplicado para este RNC":{
+    desc:"Ya existe un comprobante con el mismo NCF para este mismo proveedor.",
+    fix:"Revisa si este comprobante ya fue registrado antes. Si es correcto, puede ser un error en la factura del proveedor — contacta al proveedor."
+  },
+  "Falta el total":{
+    desc:"No se encontró el monto total del comprobante.",
+    fix:"Busca en la factura original el total a pagar e ingrésalo manualmente en el campo Total."
+  },
+  "Total no cuadra con subtotal + ITBIS":{
+    desc:"La suma de subtotal más ITBIS no coincide con el total registrado.",
+    fix:"El sistema calculó automáticamente: Subtotal = Total − ITBIS. Si el total es correcto, solo verifica que el ITBIS sea el correcto (normalmente 18% del subtotal)."
+  }
+};
+
+function getIssueSolution(issue){
+  // Exact match first
+  if(ERROR_SOLUTIONS[issue]) return ERROR_SOLUTIONS[issue];
+  // Dynamic "unclear fields" message
+  if(issue.startsWith("La IA marcó como difíciles de leer")){
+    return {
+      desc:"La IA no estuvo segura de uno o más campos al leer esta factura (foto borrosa, doblada o con mala luz).",
+      fix:"Abre el visor de la factura (clic en el badge PDF/IMG), compara los campos señalados con la imagen original y corrígelos manualmente. Si tienes una mejor foto, reescanea con el botón 🔄."
+    };
+  }
+  // Partial match
+  for(let key of Object.keys(ERROR_SOLUTIONS)){
+    if(issue.includes(key.slice(0,20))) return ERROR_SOLUTIONS[key];
+  }
+  return {desc:issue, fix:"Abre el comprobante con el botón (•••) y corrige el dato manualmente."};
+}
+
+function validate(d,skipId){
+  let issues=[],r=clean(d.rnc),n=clean(d.ncf),ni=ncfInfo(n);
+
+  // ── FECHA ──────────────────────────────────────────────────
+  if(!d.date) issues.push("Falta la fecha");
+
+  // ── RNC / CÉDULA ───────────────────────────────────────────
+  if(d.direction!=="sale"&&!r){
+    issues.push("Falta RNC o cédula");
+  } else if(r){
+    // Longitud primero
+    if(r.length!==9&&r.length!==11){
+      issues.push(r.length<9
+        ? "RNC debe tener 9 dígitos (persona jurídica)"
+        : "Cédula debe tener 11 dígitos (persona física)");
+    } else if(!validRNC(r)){
+      issues.push("RNC/cédula con dígito verificador inválido");
+    }
+  }
+
+  // ── NCF / e-NCF ─────────────────────────────────────────────
+  if(!n){
+    issues.push("Falta NCF");
+  } else {
+    // Longitud correcta
+    if(n.startsWith("B") && n.length!==11){
+      issues.push("NCF debe tener 11 caracteres (B + 2 tipo + 8 secuencia)");
+    } else if(n.startsWith("E") && n.length!==13){
+      if(ni.hasExtraZeros){
+        issues.push("NCF con ceros extra detectados — corregir manualmente");
+      } else {
+        issues.push("e-NCF debe tener 13 caracteres (E + 2 tipo + 10 secuencia)");
+      }
+    } else if(!n.startsWith("B")&&!n.startsWith("E")){
+      issues.push("Falta NCF"); // no starts with B or E at all
+    } else if(!ni.valid){
+      issues.push("NCF con ceros extra detectados — corregir manualmente");
+    }
+    // Tipo reconocido
+    if(n.length>0 && !NCF_TYPES[ni.code] && !issues.some(i=>i.includes("NCF"))){
+      issues.push("Tipo de NCF no reconocido");
+    }
+    // Duplicado
+    if(r && docs.some(x=>x.id!==skipId&&clean(x.rnc)===r&&clean(x.ncf)===n)){
+      issues.push("NCF duplicado para este RNC");
+    }
+  }
+
+  // ── MONTOS ──────────────────────────────────────────────────
+  if(!+d.total) issues.push("Falta el total");
+  let sub=+d.subtotal||0,tax=+d.itbis||0,total=+d.total||0;
+  if(total && tax>=0 && Math.abs((sub+tax)-total)>0.10){
+    issues.push("Total no cuadra con subtotal + ITBIS");
+  }
+
+  // ── CONFIANZA DE LA IA ────────────────────────────────────────
+  // Si la IA marcó baja confianza o señaló campos difíciles de leer
+  // (imagen borrosa, doblada, etc.) lo advertimos para revisión manual.
+  if(d.aiConfidence==="baja"){
+    issues.push("La IA tuvo baja confianza leyendo esta factura — verifica los datos contra la imagen original");
+  } else if(d.aiUnclear && d.aiUnclear.length>0){
+    issues.push(`La IA marcó como difíciles de leer: ${d.aiUnclear.join(", ")} — verifica manualmente`);
+  }
+
+  let severe=issues.some(x=>/Falta|inválid|duplicado|debe tener|ceros extra/.test(x));
+  return{issues,status:issues.length?(severe?"error":"warn"):"ok",ncfType:ni.type}
+}
+function normalize(d){
+  let total  = +d.total||0;
+  let itbis  = +d.itbis||0;
+  let itbisW = +d.itbisWithheld||0;
+  let isrW   = +d.isrWithheld||0;
+
+  // Subtotal = Total - ITBIS  (siempre calculado así para consistencia)
+  // Si el total es 0 pero hay subtotal ingresado manualmente, lo respetamos
+  let subtotal;
+  if(total > 0){
+    subtotal = Math.max(0, parseFloat((total - itbis).toFixed(2)));
+  } else {
+    subtotal = +d.subtotal||0;
+  }
+
+  // Auto-fix NCF: quitar ceros extra del medio
+  let ncfRaw = clean(d.ncf);
+  if(ncfRaw.length > 13){
+    // Try to fix: B + 2-digit type + 8-digit seq (NCF) or E + 2-digit type + 10-digit seq (eNCF)
+    let fixedNCF = ncfRaw.replace(/^(B)(\d{2})0*(\d{8}).*$/,"$1$2$3")
+                          .replace(/^(E)(\d{2})0*(\d{10}).*$/,"$1$2$3");
+    if(fixedNCF.length===11||fixedNCF.length===13) ncfRaw=fixedNCF;
+  }
+
+  let o={
+    id:d.id||crypto.randomUUID(),
+    direction:d.direction||"purchase",
+    date:toISO(d.date)||new Date().toISOString().slice(0,10),
+    rnc:clean(d.rnc),
+    name:String(d.name||"Sin identificar").trim(),
+    ncf:ncfRaw,
+    expense:d.expense||"02",
+    subtotal,
+    itbis,
+    itbisWithheld:itbisW,
+    isrWithheld:isrW,
+    total,
+    payment:d.payment||"bank",
+    source:d.source||"Manual",
+    created:d.created||Date.now(),
+    hasFile:d.hasFile||false,
+    aiConfidence:d.confidence||null,
+    aiUnclear:Array.isArray(d.unclear_fields)?d.unclear_fields:[]
+  };
+  Object.assign(o,validate(o,o.id));
+  return o;
+}
+function toISO(v){if(!v)return"";v=String(v).trim();let m=v.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return`${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;return/^\d{4}-\d{2}-\d{2}/.test(v)?v.slice(0,10):""}
+
+// ════════════════════════════════════════════
+//  PARSERS (text, XML, CSV)
+// ════════════════════════════════════════════
+function parseText(text,name="archivo"){
+  let get=(...pats)=>{for(let p of pats){let m=text.match(p);if(m)return m[1].trim()}return""};
+  let ncf=get(/\b([BE]\d{10,12})\b/i),rnc=get(/(?:RNC|C[ÉE]DULA)\s*[:#-]?\s*([0-9\-]{9,13})/i,/\b(\d{9}|\d{11})\b/),date=get(/(?:FECHA|EMISI[ÓO]N)\s*[:#-]?\s*(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/i),total=get(/(?:TOTAL(?:\s+A\s+PAGAR)?|MONTO\s+TOTAL)\s*[:$RD\s]*([\d,.]+)/i),itbis=get(/(?:ITBIS|IVA)(?:\s+18%)?\s*[:$RD\s]*([\d,.]+)/i),nameVal=get(/(?:RAZ[ÓO]N\s+SOCIAL|PROVEEDOR|CLIENTE)\s*[:#-]?\s*([^\n\r]+)/i);
+  let num=v=>{v=String(v||"").replace(/,/g,"");return parseFloat(v)||0};let t=num(total),i=num(itbis);
+  return normalize({rnc,ncf,date,name:nameVal||name,subtotal:Math.max(0,t-i),itbis:i,total:t,source:name});
+}
+function parseXML(text,name){
+  let x=new DOMParser().parseFromString(text,"text/xml"),val=(...tags)=>{for(let t of tags){let e=x.getElementsByTagName(t)[0];if(e)return e.textContent}return""};
+  return normalize({rnc:val("RNCEmisor","RNCComprador"),ncf:val("eNCF","NCF"),date:val("FechaEmision","FechaEmisionNCF"),name:val("RazonSocialEmisor","RazonSocialComprador"),subtotal:val("MontoGravadoTotal","MontoGravadoI1"),itbis:val("TotalITBIS","ITBIS1"),total:val("MontoTotal"),source:name});
+}
+function splitCSV(line,sep){let out=[],cur="",q=false;for(let c of line){if(c==='"')q=!q;else if(c===sep&&!q){out.push(cur);cur=""}else cur+=c}out.push(cur);return out}
+function parseCSV(text,name){
+  let lines=text.trim().split(/\r?\n/),sep=lines[0].includes(";")?";":",",head=splitCSV(lines.shift(),sep).map(x=>x.toLowerCase().trim());
+  return lines.filter(Boolean).map(line=>{let a=splitCSV(line,sep),g=(...keys)=>{let i=head.findIndex(h=>keys.some(k=>h.includes(k)));return i>=0?a[i]:""};return normalize({direction:g("movimiento","tipo")==="venta"?"sale":"purchase",date:g("fecha"),rnc:g("rnc","cedula"),name:g("nombre","proveedor","cliente"),ncf:g("ncf","comprobante"),subtotal:g("subtotal","monto facturado"),itbis:g("itbis"),total:g("total"),source:name})});
+}
+
+// ════════════════════════════════════════════
+//  AI EXTRACTION
+// ════════════════════════════════════════════
+async function fileToB64(file){return new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=()=>rej(new Error("Error de lectura"));r.readAsDataURL(file)})}
+
+// ── API FETCH HELPER ─────────────────────────────────────────────────────
+// Detecta si estamos en servidor local o file://, y actúa en consecuencia.
+// Desde file:// → llama directo con headers CORS especiales (funciona en PC)
+// Desde servidor (celular/ngrok) → el servidor Python ya agrega CORS, funciona normal
+async function apiFetch(url, options){
+  // Normalizar headers
+  let headers = options.headers || {};
+
+  // Groq y Google permiten llamadas directas desde el browser con sus respectivos headers
+  // No necesitamos proxy — simplemente aseguramos que los headers lleguen correctamente
+  return fetch(url, {...options, headers});
+}
+
+async function extractWithAI(file){
+  let b64=await fileToB64(file);
+  let apiKey=window._apiKey;
+  let provider=window._aiProvider||"groq";
+  if(!apiKey) throw new Error("Falta la API Key. Configúrala en ⚙️ Configuración.");
+
+  const PROMPT=`Eres un experto extrayendo datos de facturas fiscales dominicanas a partir de fotos, que a veces están borrosas, dobladas o con mala iluminación.
+
+INSTRUCCIONES CRÍTICAS PARA NÚMEROS:
+- Lee cada dígito del RNC/Cédula y del NCF UNO POR UNO, con extremo cuidado. Estos números son críticos y un solo dígito mal leído invalida el documento.
+- Si un dígito es ambiguo o ilegible (foto borrosa, doblez, mancha), NO lo adivines. Indica baja confianza.
+- Verifica que el RNC tenga exactamente 9 dígitos (empresa) u 11 dígitos (cédula persona física).
+- Verifica que el NCF tenga exactamente 11 caracteres si empieza con B, o 13 caracteres si empieza con E.
+- Vuelve a mirar la imagen una segunda vez antes de responder, comparando cada dígito que escribiste con el que aparece en la foto.
+
+Responde ÚNICAMENTE con el objeto JSON, sin texto antes ni después, sin markdown, sin explicaciones:
+{"rnc":"solo dígitos sin guiones ej:101019921","name":"razón social del emisor","ncf":"ej:B0100000123 o E310000001234","date":"YYYY-MM-DD","subtotal":0.00,"itbis":0.00,"itbisWithheld":0,"isrWithheld":0,"total":0.00,"expense":"02","direction":"purchase","payment":"bank","confidence":"alta|media|baja","unclear_fields":["lista de campos que fueron difíciles de leer, vacío si ninguno"]}
+
+Montos como números decimales. Si no ves un dato usa null o 0. El campo "confidence" debe reflejar tu certeza real sobre el RNC y NCF — usa "baja" si la imagen está borrosa o el número fue difícil de distinguir.`;
+
+  let mimeType=file.type||"image/jpeg";
+  let resp;
+
+  if(provider==="groq"){
+    // ── Groq — usa OpenAI-compatible API con vision ──────────────────────
+    if(file.type==="application/pdf"){
+      throw new Error("Groq no soporta PDF directamente. Convierte a imagen (JPG/PNG) o usa Google Gemini.");
+    }
+    let dataUrl=`data:${mimeType};base64,${b64}`;
+    resp=await apiFetch("https://api.groq.com/openai/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":`Bearer ${apiKey}`},
+      body:JSON.stringify({
+        model:"meta-llama/llama-4-scout-17b-16e-instruct",
+        messages:[{
+          role:"user",
+          content:[
+            {type:"image_url",image_url:{url:dataUrl}},
+            {type:"text",text:PROMPT}
+          ]
+        }],
+        temperature:0,
+        max_tokens:1024,
+        response_format:{type:"json_object"}
+      })
+    });
+    if(!resp.ok){
+      let err=await resp.json().catch(()=>({}));
+      let apiMsg=err.error?.message||`Error ${resp.status}`;
+      if(resp.status===401) throw new Error("API Key de Groq inválida. Verifica que empiece con gsk_");
+      if(resp.status===429) throw new Error(`Límite Groq (429): ${apiMsg}`);
+      throw new Error(`Error Groq (${resp.status}): ${apiMsg}`);
+    }
+  } else {
+    // ── Google Gemini ─────────────────────────────────────────────────────
+    let inlinePart={inlineData:{mimeType,data:b64}};
+    resp=await apiFetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},
+        body:JSON.stringify({
+          contents:[{parts:[inlinePart,{text:PROMPT}]}],
+          generationConfig:{temperature:0,maxOutputTokens:2048}
+        })
+      }
+    );
+    if(!resp.ok){
+      let err=await resp.json().catch(()=>({}));
+      let apiMsg=err.error?.message||`Error ${resp.status}`;
+      if(resp.status===403) throw new Error("Sin permisos. Verifica que la API de Gemini esté activa.");
+      if(resp.status===429) throw new Error(`Límite Gemini (429): ${apiMsg}`);
+      throw new Error(`Error Gemini (${resp.status}): ${apiMsg}`);
+    }
+  }
+  let data=await resp.json();
+  let raw="";
+  let prov=window._aiProvider||"groq";
+
+  if(prov==="groq"){
+    // OpenAI-compatible format
+    raw=data.choices?.[0]?.message?.content||"";
+  } else {
+    // Gemini format — puede tener múltiples parts (thinking + respuesta)
+    let parts=data.candidates?.[0]?.content?.parts||[];
+    raw=parts.map(p=>p.text||"").join("\n").trim();
+  }
+
+  if(!raw){
+    console.error("AI raw response:", JSON.stringify(data,null,2));
+    throw new Error("La IA no devolvió texto. Respuesta: "+JSON.stringify(data).slice(0,200));
+  }
+
+  // Limpiar markdown y bloques de código
+  let clean=raw
+    .replace(/```json[\s\S]*?```/g, m=>m.slice(7,-3))  // extraer contenido del bloque
+    .replace(/```[\s\S]*?```/g,"")
+    .replace(/`/g,"")
+    .trim();
+
+  // Buscar el JSON — puede estar rodeado de texto explicativo
+  // Intentar primero JSON limpio, luego buscar con regex
+  let parsed=null;
+
+  // Intento 1: el texto completo ES el JSON
+  try { parsed=JSON.parse(clean); } catch(e){}
+
+  // Intento 2: buscar el primer { ... } que sea JSON válido
+  if(!parsed){
+    let m=clean.match(/\{[\s\S]*\}/);
+    if(m){
+      try { parsed=JSON.parse(m[0]); } catch(e){
+        // Intento 3: limpiar comas y comillas problemáticas
+        let fixed=m[0]
+          .replace(/,\s*}/g,"}").replace(/,\s*]/g,"]")  // trailing commas
+          .replace(/:\s*undefined/g,":null")
+          .replace(/(['"])?([a-zA-Z_]+)(['"])?\s*:/g,'"$2":'); // keys sin comillas
+        try { parsed=JSON.parse(fixed); } catch(e2){}
+      }
+    }
+  }
+
+  if(!parsed){
+    console.error("No se pudo parsear JSON. Raw:", raw.slice(0,500));
+    throw new Error("No se encontró JSON en la respuesta de Gemini. Raw: "+raw.slice(0,300));
+  }
+
+  return normalize({...parsed,source:`Gemini: ${file.name}`,hasFile:true});
+}
+
+// ── RATE LIMITER INTELIGENTE ─────────────────────────────────────────────
+// Gemini free: 15 rpm. Procesamos en lotes de 5 en paralelo con control.
+const RateLimiter = {
+  queue: [],
+  running: 0,
+  MAX_PARALLEL: 5,       // 5 en paralelo
+  WINDOW_MS: 62000,      // ventana de 62 segundos (margen sobre 60)
+  timestamps: [],        // registro de llamadas en la ventana actual
+
+  async acquire(){
+    return new Promise(res=>{
+      this.queue.push(res);
+      this.tryNext();
+    });
+  },
+
+  tryNext(){
+    if(this.queue.length===0) return;
+    // Limpiar timestamps fuera de la ventana
+    let now=Date.now();
+    this.timestamps=this.timestamps.filter(t=>now-t < this.WINDOW_MS);
+    // Si estamos bajo el límite de 14/min y bajo MAX_PARALLEL concurrentes
+    if(this.running < this.MAX_PARALLEL && this.timestamps.length < 14){
+      let res=this.queue.shift();
+      this.running++;
+      this.timestamps.push(Date.now());
+      res();
+    } else {
+      // Calcular cuánto esperar hasta que haya slot disponible
+      let waitMs=500;
+      if(this.timestamps.length>=14){
+        // Esperar hasta que el timestamp más viejo salga de la ventana
+        waitMs=this.WINDOW_MS - (now - this.timestamps[0]) + 200;
+      }
+      setTimeout(()=>this.tryNext(), waitMs);
+    }
+  },
+
+  release(){
+    this.running--;
+    this.tryNext();
+  }
+};
+
+// Process one file with rate limiter
+async function processVisualFile(file, logFn){
+  logFn && logFn(`⏳ En cola: ${file.name}…`,"pending");
+  await RateLimiter.acquire();
+  try{
+    logFn && logFn(`⚙️ Procesando: ${file.name}…`,"pending");
+    let doc = await extractWithAI(file);
+    await saveDoc(doc);
+    await saveFile(doc.id, file);
+    logFn && logFn(`✓ ${file.name} → ${doc.name||"Sin nombre"} · ${money(doc.total)}`,"ok");
+    return doc;
+  } finally {
+    RateLimiter.release();
+  }
+}
+
+async function handleAISingle(files){
+  if(!files.length)return;
+  let arr=Array.from(files);
+  let out=$("#aiOutput"),st=$("#aiStatus");
+  out.style.display="block";st.style.display="flex";out.textContent="";
+  let added=0,errors=0,total=arr.length;
+
+  function updateStatus(){
+    let done=added+errors;
+    st.innerHTML=`<span class="spinner"></span> Procesando ${done}/${total} · ✓ ${added} · ✗ ${errors} · en paralelo (hasta 5 a la vez)`;
+  }
+  updateStatus();
+
+  // Lanzar todas en paralelo — el RateLimiter controla el ritmo
+  await Promise.all(arr.map(async file=>{
+    try{
+      let doc=await processVisualFile(file, ()=>{});
+      added++;
+      out.textContent+=`✓ ${file.name}\n  ${doc.name} · ${doc.ncf||"sin NCF"} · ${money(doc.total)}\n\n`;
+    }catch(e){
+      errors++;
+      out.textContent+=`✗ ${file.name}: ${e.message}\n\n`;
+    }
+    updateStatus();
+  }));
+
+  await renderAll();
+  st.innerHTML=`✓ ${added} factura(s) procesada(s)${errors?` · ${errors} con error`:""}`;
+  toast(`IA procesó ${added} de ${total} archivo(s)`);
+}
+
+async function handleAIBulk(files){
+  if(!files.length)return;
+  let prog=$("#bulkProg"),bar=$("#bulkBar"),lbl=$("#bulkLbl"),log=$("#bulkLog");
+  prog.style.display="block";log.innerHTML="";
+  let arr=Array.from(files),done=0,ok=0,fail=0;
+
+  // Crear una fila por archivo inmediatamente
+  let liMap={};
+  arr.forEach(f=>{
+    let li=document.createElement("div");
+    li.style.cssText="padding:7px 10px;border-radius:6px;font-size:11px;background:#f4f6f4;color:var(--soft)";
+    li.textContent=`⏳ En cola: ${f.name}`;
+    log.appendChild(li);
+    liMap[f.name]=li;
+  });
+
+  function updateBar(){
+    bar.style.width=`${done/arr.length*100}%`;
+    lbl.textContent=`Procesando ${arr.length} facturas en paralelo · ✓ ${ok} · ✗ ${fail} · pendientes ${arr.length-done}`;
+  }
+  updateBar();
+
+  // Lanzar todas en paralelo — RateLimiter controla el ritmo automáticamente
+  await Promise.all(arr.map(async file=>{
+    let li=liMap[file.name];
+    li.textContent=`⚙️ Procesando: ${file.name}`;
+    try{
+      let doc=await processVisualFile(file);
+      li.style.cssText="padding:7px 10px;border-radius:6px;font-size:11px;background:#eef9f3;color:#1a6644";
+      li.textContent=`✓ ${file.name} → ${doc.name||"Sin nombre"} · ${money(doc.total)}`;
+      ok++;
+    }catch(e){
+      li.style.cssText="padding:7px 10px;border-radius:6px;font-size:11px;background:#fff0ef;color:#8b1f1c";
+      li.textContent=`✗ ${file.name}: ${e.message}`;
+      fail++;
+    }
+    done++;
+    updateBar();
+    log.scrollTop=log.scrollHeight;
+  }));
+
+  await renderAll();
+  lbl.textContent=`✓ Completado: ${ok} procesadas · ${fail} con error`;
+  toast(`IA procesó ${ok} de ${arr.length} archivo(s)`);
+}
+
+// ════════════════════════════════════════════
+//  FILE PROCESSING (non-AI: XML, CSV, TXT, JSON)
+// ════════════════════════════════════════════
+async function processFiles(files){
+  let arr=[...files],done=0;
+  $("#progress").style.width="2%";
+  for(let file of arr){
+    try{
+      let ext=file.name.split(".").pop().toLowerCase();
+      if(["xml","csv","txt","json"].includes(ext)){
+        let text=await file.text(),result=[];
+        if(ext==="xml") result=[parseXML(text,file.name)];
+        else if(ext==="csv") result=parseCSV(text,file.name);
+        else if(ext==="json"){let j=JSON.parse(text);result=(Array.isArray(j)?j:[j]).map(x=>normalize({...x,source:file.name}))}
+        else result=[parseText(text,file.name)];
+        for(let doc of result) await saveDoc(doc);
+      } else {
+        // Imágenes / PDFs → guardar archivo primero, luego extraer con IA
+        // Así el archivo queda guardado aunque la IA falle
+        let tempId = crypto.randomUUID();
+        let tempDoc = normalize({id:tempId, source:file.name, hasFile:true,
+          name: file.name.replace(/\.[^.]+$/,""), direction:"purchase"});
+        await saveDoc(tempDoc);
+        await saveFile(tempId, file);
+        // Ahora intentar extracción IA y actualizar si funciona
+        try {
+          let aiDoc = await extractWithAI(file);
+          aiDoc.id = tempId; // reuse same ID so file stays linked
+          await saveDoc(aiDoc);
+        } catch(aiErr) {
+          // Archivo guardado pero sin datos IA — el usuario puede editar manualmente
+          toast(`⚠ ${file.name} guardado. IA: ${aiErr.message.slice(0,80)}`);
+        }
+      }
+    }catch(e){ toast(`Error procesando ${file.name}: ${e.message}`) }
+    done++;
+    $("#progress").style.width=`${done/arr.length*100}%`;
+  }
+  setTimeout(()=>$("#progress").style.width="0",700);
+  await renderAll();
+  toast(`${done} archivo(s) procesado(s)`);
+}
+
+// ════════════════════════════════════════════
+//  FILE VIEWER
+// ════════════════════════════════════════════
+async function viewFile(docId){
+  let fileRec = await dbGet("files", docId);
+  let doc = docs.find(d=>d.id===docId);
+  if(!doc) return;
+
+  let preview=$("#viewerPreview"), dataPane=$("#viewerData");
+  $("#viewerTitle").textContent = doc.name||"Factura";
+  preview.innerHTML="";
+
+  if(fileRec){
+    let blob=new Blob([fileRec.data],{type:fileRec.type});
+    let url=URL.createObjectURL(blob);
+    if(fileRec.type==="application/pdf"){
+      preview.innerHTML=`<iframe src="${url}" style="width:100%;height:75vh;border:0"></iframe>`;
+    } else if(fileRec.type.startsWith("image/")){
+      let img=document.createElement("img");
+      img.src=url; img.style.cssText="max-width:100%;max-height:75vh;object-fit:contain";
+      preview.appendChild(img);
+    }
+  } else {
+    preview.innerHTML=`<div class="no-preview">📄<br><br>No hay archivo guardado para<br>este comprobante.</div>`;
+  }
+
+  // Data pane
+  let fields=[
+    ["Proveedor / cliente", doc.name],
+    ["RNC / Cédula", doc.rnc||"—"],
+    ["NCF", doc.ncf||"—"],
+    ["Tipo NCF", doc.ncfType],
+    ["Fecha", doc.date],
+    ["Tipo de gasto", doc.expense],
+    ["Subtotal", money(doc.subtotal)],
+    ["ITBIS", money(doc.itbis)],
+    ["Total", money(doc.total)],
+    ["Origen", doc.source],
+    ["Estado", doc.status==="ok"?"✓ Listo":doc.status==="warn"?"⚠ Revisar":"✗ Error"],
+    doc.issues?.length ? ["Incidencias", doc.issues.join(", ")] : null
+  ].filter(Boolean);
+
+  dataPane.innerHTML=fields.map(([l,v])=>`
+    <div class="viewer-field ${l==="Total"?"money":""}">
+      <label>${l}</label><span>${v}</span>
+    </div>`).join("")+`
+    <div id="rescanStatus" style="display:none;margin-top:14px;padding:11px 14px;border-radius:10px;font-size:12px"></div>
+    <div class="viewer-actions">
+      ${fileRec?`<button class="btn sm ai-btn" id="rescanBtn" onclick="rescanFile('${docId}')">🔄 Reescanear con IA</button>`:""}
+      ${fileRec?`<button class="btn sm primary" onclick="downloadFile('${docId}')">⬇ Descargar archivo</button>`:""}
+      <button class="btn sm" onclick="editDoc('${docId}');document.getElementById('viewerModal').close()">✏ Editar datos</button>
+      <button class="btn sm danger" onclick="confirmDelete('${docId}')">🗑 Eliminar</button>
+    </div>`;
+
+  document.getElementById("viewerModal").showModal();
+}
+
+async function rescanFile(docId){
+  let fileRec = await dbGet("files", docId);
+  if(!fileRec){ toast("No hay archivo guardado para reescanear"); return; }
+
+  let btn=document.getElementById("rescanBtn");
+  let statusBox=document.getElementById("rescanStatus");
+  let originalText=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML=`<span class="spinner"></span> Reescaneando…`;
+  statusBox.style.display="block";
+  statusBox.style.cssText="display:block;margin-top:14px;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff6dc;color:#6e4b00;border:1px solid #f5e0a0";
+  statusBox.textContent="⏳ Enviando la factura nuevamente a la IA para extraer los datos…";
+
+  try{
+    // Reconstruct a File object from the stored ArrayBuffer
+    let blob=new Blob([fileRec.data],{type:fileRec.type});
+    let file=new File([blob], fileRec.name, {type:fileRec.type});
+
+    // Re-run AI extraction (uses the RateLimiter automatically)
+    let newDoc = await extractWithAI(file);
+
+    // Keep the same ID so it stays linked to the same file + replaces old data
+    newDoc.id = docId;
+    newDoc.hasFile = true;
+    newDoc.created = docs.find(d=>d.id===docId)?.created || Date.now();
+
+    await saveDoc(newDoc);
+    await renderAll();
+
+    statusBox.style.cssText="display:block;margin-top:14px;padding:11px 14px;border-radius:10px;font-size:12px;background:#eef9f3;color:#1a6644;border:1px solid #b8e8d0";
+    statusBox.textContent="✓ Factura reescaneada. Los datos fueron actualizados con la nueva lectura de la IA.";
+    toast("✓ Factura reescaneada correctamente");
+
+    // Refresh the viewer with updated data
+    setTimeout(()=>viewFile(docId), 900);
+
+  }catch(e){
+    statusBox.style.cssText="display:block;margin-top:14px;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff0ef;color:#8b1f1c;border:1px solid #f0cccb";
+    statusBox.textContent="✗ Error al reescanear: "+e.message;
+    toast("Error al reescanear la factura");
+    btn.disabled=false;
+    btn.innerHTML=originalText;
+  }
+}
+
+async function downloadFile(docId){
+  let rec=await dbGet("files",docId);
+  if(!rec){toast("No hay archivo guardado");return}
+  let blob=new Blob([rec.data],{type:rec.type});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=rec.name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+async function confirmDelete(id){
+  if(!confirm("¿Eliminar este comprobante y su archivo?"))return;
+  await deleteDocAndFile(id);
+  document.getElementById("viewerModal").close();
+  document.getElementById("editor").close();
+  await renderAll();
+  toast("Comprobante eliminado");
+}
+
+// ════════════════════════════════════════════
+//  ARCHIVE VIEW
+// ════════════════════════════════════════════
+let archView = "grid"; // grid | detail | list
+
+function setArchView(v){
+  archView=v;
+  ["Grid","Detail","List"].forEach(n=>{
+    let btn=document.getElementById("view"+n);
+    if(btn) btn.classList.toggle("active", n.toLowerCase()===v);
+  });
+  renderArchive();
+}
+
+function thumbHTML(f, size=130){
+  let isImg=f.type.startsWith("image/");
+  let isPdf=f.type==="application/pdf";
+  let ext=f.name.split(".").pop().toUpperCase();
+  if(isImg){
+    let blob=new Blob([f.data],{type:f.type});
+    let url=URL.createObjectURL(blob);
+    return `<img src="${url}" loading="lazy" style="width:100%;height:${size}px;object-fit:cover">`;
+  }
+  if(isPdf) return `<span style="font-size:${size>60?48:28}px">📄</span>`;
+  return `<span style="font-size:${size>60?40:24}px">📎</span>`;
+}
+
+async function renderArchive(){
+  let allFiles=await dbGetAll("files");
+  let q=($("#archSearch")?.value||"").toLowerCase();
+  let atype=document.querySelector(".chip[data-atype].active")?.dataset?.atype||"all";
+  let container=$("#archiveContainer"), cnt=$("#archCount");
+  let docMap={};
+  docs.forEach(d=>docMap[d.id]=d);
+
+  let items=allFiles.filter(f=>{
+    let isPdf=f.type==="application/pdf";
+    let isImg=f.type.startsWith("image/");
+    if(atype==="pdf"&&!isPdf)return false;
+    if(atype==="img"&&!isImg)return false;
+    let doc=docMap[f.docId]||{};
+    return (f.name+(doc.name||"")+(doc.ncf||"")+(doc.rnc||"")).toLowerCase().includes(q);
+  }).sort((a,b)=>b.saved-a.saved);
+
+  cnt.textContent=`${items.length} archivo(s)`;
+  container.innerHTML="";
+
+  if(!items.length){
+    container.innerHTML=`<div style="text-align:center;padding:70px;color:var(--soft)">No hay archivos guardados aún.<br>Sube facturas en PDF o imagen desde el Resumen o desde tu teléfono.</div>`;
+    return;
+  }
+
+  if(archView==="grid"){
+    // ── MINIATURAS ──────────────────────────────
+    let wrap=document.createElement("div");
+    wrap.className="archive-grid";
+    for(let f of items){
+      let doc=docMap[f.docId]||{};
+      let ext=f.name.split(".").pop().toUpperCase();
+      let sizeStr=f.size>1048576?(f.size/1048576).toFixed(1)+"MB":(f.size/1024).toFixed(0)+"KB";
+      let card=document.createElement("div");
+      card.className="arch-card";
+      card.onclick=()=>viewFile(f.docId);
+      card.innerHTML=`
+        <div class="arch-thumb">${thumbHTML(f,130)}<span class="arch-ext">${ext}</span></div>
+        <div class="arch-info">
+          <div class="arch-name">${esc(f.name)}</div>
+          <div class="arch-meta">${doc.date||"—"} · ${sizeStr}</div>
+          <div class="arch-ncf">${doc.ncf||doc.name||"Sin datos"}</div>
+        </div>`;
+      wrap.appendChild(card);
+    }
+    container.appendChild(wrap);
+
+  } else if(archView==="detail"){
+    // ── DETALLE ─────────────────────────────────
+    let wrap=document.createElement("div");
+    wrap.className="archive-detail";
+    for(let f of items){
+      let doc=docMap[f.docId]||{};
+      let ext=f.name.split(".").pop().toUpperCase();
+      let sizeStr=f.size>1048576?(f.size/1048576).toFixed(1)+"MB":(f.size/1024).toFixed(0)+"KB";
+      let statusColor=doc.status==="ok"?"#0f6642":doc.status==="warn"?"#7a5000":"#8b1f1c";
+      let statusBg=doc.status==="ok"?"var(--mint)":doc.status==="warn"?"#fff3cc":"var(--redbg)";
+      let statusLabel=doc.status==="ok"?"✓ Listo":doc.status==="warn"?"! Revisar":"× Error";
+      let row=document.createElement("div");
+      row.className="arch-detail-row";
+      row.onclick=()=>viewFile(f.docId);
+      row.innerHTML=`
+        <div class="arch-detail-thumb">${thumbHTML(f,64)}</div>
+        <div class="arch-detail-info">
+          <div class="arch-detail-name">${esc(doc.name||f.name)}</div>
+          <div class="arch-detail-sub">${doc.rnc||"Sin RNC"} · ${doc.date||"Sin fecha"} · <span style="background:#eef3fd;color:var(--blue);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">${ext}</span> ${sizeStr}</div>
+          <div class="arch-detail-ncf">${doc.ncf||"Sin NCF"}</div>
+        </div>
+        <div>
+          <div class="arch-detail-amount">${money(doc.total||0)}</div>
+          <div class="arch-detail-status"><span style="background:${statusBg};color:${statusColor};padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">${statusLabel}</span></div>
+        </div>`;
+      wrap.appendChild(row);
+    }
+    container.appendChild(wrap);
+
+  } else {
+    // ── LISTA ────────────────────────────────────
+    let wrap=document.createElement("div");
+    wrap.className="archive-list";
+    let head=document.createElement("div");
+    head.className="arch-list-row arch-list-head";
+    head.innerHTML=`<span></span><span>Nombre / Proveedor</span><span>NCF</span><span>Fecha</span><span>Total</span><span>Tipo</span><span></span>`;
+    wrap.appendChild(head);
+    for(let f of items){
+      let doc=docMap[f.docId]||{};
+      let ext=f.name.split(".").pop().toUpperCase();
+      let ico=f.type.startsWith("image/")?"🖼":"📄";
+      let icoBg=f.type.startsWith("image/")?"#eef9f3":"#fff5f5";
+      let statusDot=doc.status==="ok"?"🟢":doc.status==="warn"?"🟡":"🔴";
+      let row=document.createElement("div");
+      row.className="arch-list-row";
+      row.onclick=()=>viewFile(f.docId);
+      row.innerHTML=`
+        <div class="arch-list-ico" style="background:${icoBg}">${ico}</div>
+        <div style="min-width:0">
+          <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(doc.name||f.name)}</div>
+          <div style="font-size:10px;color:var(--soft)">${doc.rnc||"—"}</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue)">${doc.ncf||"—"}</div>
+        <div style="font-size:12px">${doc.date||"—"}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">${money(doc.total||0)}</div>
+        <div><span style="background:#eef3fd;color:var(--blue);padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700">${ext}</span></div>
+        <div style="font-size:16px">${statusDot}</div>`;
+      wrap.appendChild(row);
+    }
+    container.appendChild(wrap);
+  }
+}
+
+// ── QR CODE GENERATOR (built-in, no library needed) ──────────────────────
+function generateQR(text, canvas){
+  // Simple QR using Google Charts API (works offline won't work, use an img tag instead)
+  let ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // Use image from Google Charts
+  let img=new Image();
+  let encoded=encodeURIComponent(text);
+  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}&format=png&margin=10`;
+  img.onload=()=>ctx.drawImage(img,0,0,200,200);
+  img.onerror=()=>{
+    ctx.fillStyle="#f4f4f4";ctx.fillRect(0,0,200,200);
+    ctx.fillStyle="#666";ctx.font="12px sans-serif";ctx.textAlign="center";
+    ctx.fillText("Genera el QR con",100,85);ctx.fillText("el link de abajo",100,102);
+  };
+}
+
+function openQRModal(){
+  let url=window.location.href;
+  let isFile=url.startsWith("file://");
+  let urlEl=document.getElementById("qrUrl");
+  let infoEl=document.getElementById("qrInfo");
+
+  if(isFile){
+    // Running as local file — QR won't work, show instructions
+    urlEl.textContent=url;
+    if(infoEl) infoEl.style.display="block";
+    // Still try to draw QR (will fail gracefully)
+    generateQR(url, document.getElementById("qrCanvas"));
+  } else {
+    // Running from server — QR will work!
+    urlEl.textContent=url;
+    if(infoEl) infoEl.style.display="none";
+    generateQR(url, document.getElementById("qrCanvas"));
+  }
+  document.getElementById("qrModal").showModal();
+}
+
+async function copyPhoneLink(){
+  let url=window.location.href;
+  try{
+    await navigator.clipboard.writeText(url);
+    toast("✓ Link copiado — mándatelo por WhatsApp");
+  }catch(e){
+    prompt("Copia este link y mándatelo por WhatsApp:",url);
+  }
+}
+
+// ════════════════════════════════════════════
+//  INLINE CELL EDITING
+// ════════════════════════════════════════════
+function startCellEdit(td,id,field,cur){
+  if(td.querySelector(".cell-inp"))return;
+  let inp=document.createElement("input");
+  inp.className="cell-inp";inp.value=cur;inp.style.width=td.offsetWidth+"px";
+  td.textContent="";td.appendChild(inp);inp.focus();inp.select();
+  async function commit(){
+    let v=inp.value.trim(),idx=docs.findIndex(d=>d.id===id);
+    if(idx>=0&&v!==String(cur)){
+      docs[idx][field]=["subtotal","itbis","itbisWithheld","isrWithheld","total"].includes(field)?+v||0:v;
+      docs[idx]=normalize(docs[idx]);
+      await saveDoc(docs[idx]);
+      renderTable();renderRecent();renderStats();
+    }else renderTable();
+  }
+  inp.addEventListener("blur",commit);
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commit()}if(e.key==="Escape")renderTable()});
+}
+
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function fileBadge(d){
+  if(!d.hasFile) return `<span class="file-badge none">Sin archivo</span>`;
+  let ext=d.source?.split(".").pop()?.toUpperCase()||"";
+  let isPdf=d.source?.toLowerCase().includes(".pdf")||ext==="PDF";
+  let cls=isPdf?"pdf":"img";
+  return `<span class="file-badge ${cls}" onclick="viewFile('${d.id}');event.stopPropagation()">${isPdf?"📄":"🖼"} ${isPdf?"PDF":"IMG"}</span>`;
+}
+
+function row(d){
+  let dir=d.direction==="sale"?"Venta":d.direction==="void"?"Anulado":d.direction==="foreign"?"Exterior":"Compra";
+  // Build status cell with issue details
+  let statusCell;
+  if(d.status==="ok"){
+    statusCell=`<span class="status ok">✓ Listo</span>`;
+  } else {
+    let issues=d.issues||[];
+    let firstSol=issues.length ? getIssueSolution(issues[0]) : null;
+    let tipHtml=issues.map(iss=>{
+      let s=getIssueSolution(iss);
+      return `<div style="margin-bottom:8px"><b style="color:#d03b36">✗ ${iss}</b><br><span style="color:#5a706d">↳ ${s.fix}</span></div>`;
+    }).join("");
+    let icon=d.status==="error"?"× Error":"! Revisar";
+    let cls=d.status==="error"?"error":"warn";
+    statusCell=`
+      <div style="position:relative;display:inline-block">
+        <span class="status ${cls}" style="cursor:help" onmouseenter="showTip(this)" onmouseleave="hideTip()">${icon} (${issues.length})</span>
+        <div class="issue-tip" style="display:none">${tipHtml}</div>
+      </div>`;
+  }
+  return`<tr>
+    <td>${statusCell}</td>
+    <td>${dir}</td>
+    <td class="ed" onclick="startCellEdit(this,'${d.id}','date','${d.date}')">${d.date}</td>
+    <td class="ed" onclick="startCellEdit(this,'${d.id}','rnc','${d.rnc}')">${d.rnc||"—"}</td>
+    <td class="ed" title="${esc(d.name)}" onclick="startCellEdit(this,'${d.id}','name',${JSON.stringify(d.name)})">${esc(d.name).slice(0,26)}</td>
+    <td class="ed" style="font-family:'JetBrains Mono',monospace;font-size:11px" onclick="startCellEdit(this,'${d.id}','ncf','${d.ncf}')">${d.ncf||"—"}</td>
+    <td class="money ed" onclick="startCellEdit(this,'${d.id}','subtotal',${d.subtotal})">${money(d.subtotal)}</td>
+    <td class="money ed" onclick="startCellEdit(this,'${d.id}','itbis',${d.itbis})">${money(d.itbis)}</td>
+    <td class="money ed" onclick="startCellEdit(this,'${d.id}','total',${d.total})"><b>${money(d.total)}</b></td>
+    <td>${fileBadge(d)}</td>
+    <td><button class="dots" onclick="editDoc('${d.id}')">•••</button></td>
+  </tr>`;
+}
+
+function renderTable(){
+  let q=($("#search")?.value||"").toLowerCase();
+  let list=docs.filter(d=>{
+    let sOk=currentFilter==="all"||d.status===currentFilter;
+    let dOk=currentDir==="all"||d.direction===currentDir;
+    let qOk=JSON.stringify(d).toLowerCase().includes(q);
+    return sOk&&dOk&&qOk;
+  }).sort((a,b)=>b.created-a.created);
+  $("#docRows").innerHTML=list.length?list.map(row).join(""):`<tr><td colspan="11" class="empty">No hay comprobantes para mostrar.</td></tr>`;
+  if(list.length){
+    let ss=list.reduce((a,d)=>a+d.subtotal,0),si=list.reduce((a,d)=>a+d.itbis,0),st=list.reduce((a,d)=>a+d.total,0);
+    $("#sumCnt").textContent=list.length;$("#sumSub").textContent=money(ss);$("#sumIt").textContent=money(si);$("#sumTot").textContent=money(st);
+    $("#sumRow").style.display="flex";
+  }else $("#sumRow").style.display="none";
+}
+
+function renderRecent(){
+  let list=docs.slice().sort((a,b)=>b.created-a.created).slice(0,6);
+  $("#recentTable").innerHTML=list.length
+    ?`<div class="table-wrap" style="border:0;border-radius:0"><table class="table"><thead><tr><th>Estado</th><th>Fecha</th><th>RNC</th><th>Nombre</th><th>NCF</th><th class="money">Total</th><th>Archivo</th><th></th></tr></thead><tbody>${list.map(d=>`<tr>
+        <td><span class="status ${d.status}">${d.status==="ok"?"✓":"!"}</span></td>
+        <td>${d.date}</td><td>${d.rnc||"—"}</td>
+        <td>${esc(d.name).slice(0,26)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${d.ncf||"—"}</td>
+        <td class="money">${money(d.total)}</td>
+        <td>${fileBadge(d)}</td>
+        <td><button class="dots" onclick="editDoc('${d.id}')">•••</button></td>
+      </tr>`).join("")}</tbody></table></div>`
+    :`<div class="empty">Sube una factura o carga el ejemplo para comenzar.</div>`;
+}
+
+function renderStats(){
+  let total=docs.reduce((a,d)=>a+d.total,0),itbis=docs.reduce((a,d)=>a+d.itbis,0),issues=docs.filter(d=>d.status!=="ok").length;
+  $("#sTotal").textContent=docs.length;$("#sAmount").textContent=money(total);$("#sItbis").textContent=money(itbis);
+  $("#sIssues").textContent=issues;$("#sIssuesLbl").textContent=issues?`${issues} con incidencias`:"Sin errores";
+  let c606=docs.filter(d=>d.direction==="purchase").length,b606=docs.filter(d=>d.direction==="purchase"&&d.status!=="ok").length;
+  let c607=docs.filter(d=>d.direction==="sale").length,c608=docs.filter(d=>d.direction==="void").length,c609=docs.filter(d=>d.direction==="foreign").length;
+  if($("#count606")) $("#count606").innerHTML=`${c606} comprobante(s)${b606?` <span style="color:var(--gold)">· ${b606} con incidencias</span>`:""}`;
+  if($("#count607")) $("#count607").textContent=`${c607} comprobante(s)`;
+  if($("#count608")) $("#count608").textContent=`${c608} comprobante(s)`;
+  if($("#count609")) $("#count609").textContent=`${c609} comprobante(s)`;
+  if($("#countCSV")) $("#countCSV").textContent=`${docs.length} registro(s) total`;
+}
+
+async function renderAll(){
+  await loadAllDocs();
+  docs=docs.map(d=>normalize(d));
+  renderStats();renderTable();renderRecent();
+  await updateDbStats();
+}
+
+// ════════════════════════════════════════════
+//  EDITOR MODAL
+// ════════════════════════════════════════════
+function editDoc(id){
+  let d=docs.find(x=>x.id===id)||normalize({});
+  $("#eId").value=d.id;
+  ["Direction","Date","Rnc","Name","Ncf","Expense","Subtotal","Itbis","ItbisWithheld","IsrWithheld","Total","Payment"].forEach(k=>{let el=$("#e"+k);if(el)el.value=d[k[0].toLowerCase()+k.slice(1)]??""});
+  let issues=d.issues||[],box=$("#editIssues");
+  if(issues.length){box.className="issues-box";box.innerHTML=`<b>⚠ Hallazgos:</b> ${issues.join(" · ")}`}
+  else{box.className="issues-box ok";box.innerHTML="✓ No se detectaron errores en este comprobante."}
+  $("#editor").showModal();
+}
+function readEditor(){
+  return normalize({id:$("#eId").value,direction:$("#eDirection").value,date:$("#eDate").value,rnc:$("#eRnc").value,name:$("#eName").value,ncf:$("#eNcf").value,expense:$("#eExpense").value,subtotal:$("#eSubtotal").value,itbis:$("#eItbis").value,itbisWithheld:$("#eItbisWithheld").value,isrWithheld:$("#eIsrWithheld").value,total:$("#eTotal").value,payment:$("#ePayment").value,source:"Manual",created:docs.find(x=>x.id===$("#eId").value)?.created||Date.now(),hasFile:docs.find(x=>x.id===$("#eId").value)?.hasFile||false});
+}
+
+// ════════════════════════════════════════════
+//  EXPORTS
+// ════════════════════════════════════════════
+function period(){return($("#reportPeriod").value||$("#workPeriod").value||new Date().toISOString().slice(0,7)).replace("-","")}
+function reportHeader(type,count){let r=clean($("#reportRnc").value||$("#companyRnc").value);if(!validRNC(r)){toast("Configura un RNC o cédula válido");return null}return`${type}|${r}|${period()}|${count}`}
+function dateDGII(v){return(v||"").replaceAll("-","")}
+function fmt606(d){return[d.rnc||"","1",d.expense||"02",d.ncf,"",dateDGII(d.date),dateDGII(d.date),d.subtotal.toFixed(2),"0.00",d.itbis.toFixed(2),d.itbisWithheld.toFixed(2),d.isrWithheld.toFixed(2),"0.00","0.00","0.00","01",d.total.toFixed(2),"0.00","","0.00",d.total.toFixed(2)].join("|")}
+function fmt607(d){let cash=0,bank=0,card=0,credit=0,swap=0,other=0,t=d.total;if(d.payment==="cash")cash=t;else if(d.payment==="bank")bank=t;else if(d.payment==="card")card=t;else if(d.payment==="credit")credit=t;else if(d.payment==="swap")swap=t;else other=t;return[d.rnc||"","1",d.ncf,"",dateDGII(d.date),"",d.subtotal.toFixed(2),"0.00",d.itbis.toFixed(2),"0.00",d.itbisWithheld.toFixed(2),d.isrWithheld.toFixed(2),"0.00","0.00","0.00",cash.toFixed(2),bank.toFixed(2),card.toFixed(2),credit.toFixed(2),swap.toFixed(2),other.toFixed(2),"0.00"].join("|")}
+function exportReport(type){
+  let list=docs.filter(d=>type==="606"?d.direction==="purchase":type==="607"?d.direction==="sale":type==="608"?d.direction==="void":d.direction==="foreign");
+  let bad=list.filter(d=>d.status==="error");
+  if(bad.length&&!confirm(`Hay ${bad.length} registro(s) con errores. ¿Generar borrador?`))return;
+  let h=reportHeader(type,list.length);if(!h)return;
+  let lines=[h];
+  if(type==="606")list.forEach(d=>lines.push(fmt606(d)));
+  if(type==="607")list.forEach(d=>lines.push(fmt607(d)));
+  if(type==="608")list.forEach(d=>lines.push([d.ncf,dateDGII(d.date),"01"].join("|")));
+  if(type==="609")list.forEach(d=>lines.push([d.name,"01","US",d.ncf,dateDGII(d.date),d.subtotal.toFixed(2),"0.00",d.isrWithheld.toFixed(2),"0.00"].join("|")));
+  download(`${type}_${period()}.txt`,lines.join("\r\n"),"text/plain;charset=utf-8");
+  toast(`Borrador ${type} generado (${list.length} registros)`);
+}
+function exportCSV(){
+  let cols=["Estado","Incidencias","Movimiento","Fecha","RNC_Cedula","Nombre","NCF","Tipo_NCF","Tipo_Gasto","Subtotal","ITBIS","ITBIS_Retenido","ISR_Retenido","Total","Archivo","Origen"],lines=[cols.join(",")];
+  docs.forEach(d=>lines.push([d.status,d.issues.join("; "),d.direction,d.date,d.rnc,d.name,d.ncf,d.ncfType,d.expense,d.subtotal,d.itbis,d.itbisWithheld,d.isrWithheld,d.total,d.hasFile?"Sí":"No",d.source].map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")));
+  download(`revision_${period()}.csv`,"\ufeff"+lines.join("\r\n"),"text/csv;charset=utf-8");
+}
+async function exportExcel(){
+  if(!window.XLSX){toast("Cargando librería Excel…");await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js")}
+  let wb=XLSX.utils.book_new();
+  let p606=docs.filter(d=>d.direction==="purchase");
+  let h606=["RNC/Cédula","Tipo ID","Tipo Gasto","NCF","NCF Mod","Fecha Comp","Fecha Pago","Monto Fact","M.Servicios","ITBIS","ITBIS Ret","ISR Ret","Imp.Select","Otros Imp","Propinas","F.Pago","Monto Pagado","Ret ISR Op","Fecha Mod","Monto Ret","Total","Archivo"];
+  let r606=p606.map(d=>[d.rnc,"1",d.expense,d.ncf,"",dateDGII(d.date),dateDGII(d.date),d.subtotal,0,d.itbis,d.itbisWithheld,d.isrWithheld,0,0,0,"01",d.total,0,"",0,d.total,d.hasFile?"Sí":"No"]);
+  let ws606=XLSX.utils.aoa_to_sheet([h606,...r606]);
+  XLSX.utils.book_append_sheet(wb,ws606,"606-Compras");
+  let p607=docs.filter(d=>d.direction==="sale");
+  let h607=["RNC/Cédula","Tipo ID","NCF","NCF Mod","Fecha Comp","Fecha Vence","Subtotal","M.Exento","ITBIS","ITBIS Prog","ITBIS Ret","ISR Ret","Imp.Select","Otros Imp","Propinas","Efectivo","Banco","Tarjeta","Crédito","Canje","Otro","Gratuidades"];
+  let r607=p607.map(d=>{let cash=0,bank=0,card=0,credit=0,swap=0,other=0,t=d.total;if(d.payment==="cash")cash=t;else if(d.payment==="bank")bank=t;else if(d.payment==="card")card=t;else if(d.payment==="credit")credit=t;else if(d.payment==="swap")swap=t;else other=t;return[d.rnc||"","1",d.ncf,"",dateDGII(d.date),"",d.subtotal,0,d.itbis,0,d.itbisWithheld,d.isrWithheld,0,0,0,cash,bank,card,credit,swap,other,0]});
+  let ws607=XLSX.utils.aoa_to_sheet([h607,...r607]);
+  XLSX.utils.book_append_sheet(wb,ws607,"607-Ventas");
+  let wsR=XLSX.utils.aoa_to_sheet([["RESUMEN DEL PERÍODO",""],["Período",period()],["",""],["COMPRAS (606)",""],["Registros",p606.length],["Total facturado",p606.reduce((a,d)=>a+d.total,0)],["ITBIS crédito",p606.reduce((a,d)=>a+d.itbis,0)],["ITBIS retenido",p606.reduce((a,d)=>a+d.itbisWithheld,0)],["",""],["VENTAS (607)",""],["Registros",p607.length],["Total facturado",p607.reduce((a,d)=>a+d.total,0)],["ITBIS débito",p607.reduce((a,d)=>a+d.itbis,0)],["",""],["TOTAL GENERAL",""],["Comprobantes",docs.length],["Con archivo",docs.filter(d=>d.hasFile).length]]);
+  wsR["!cols"]=[{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsR,"Resumen");
+  let bad=docs.filter(d=>d.issues&&d.issues.length>0);
+  let wsI=XLSX.utils.aoa_to_sheet([["Estado","NCF","Nombre","Fecha","Total","Incidencias"],...bad.map(d=>[d.status,d.ncf,d.name,d.date,d.total,d.issues.join("; ")])]);
+  XLSX.utils.book_append_sheet(wb,wsI,"Incidencias");
+  XLSX.writeFile(wb,`comprobantes_${period()}.xlsx`);
+  toast("Excel generado con 4 hojas");
+}
+
+async function exportBackup(){
+  let allDocs=await dbGetAll("docs");
+  let allFiles=await dbGetAll("files");
+  // Files contain ArrayBuffer, convert to base64 for JSON
+  let filesB64=allFiles.map(f=>({...f,data:arrayBufferToBase64(f.data)}));
+  let backup={version:1,exported:new Date().toISOString(),docs:allDocs,files:filesB64};
+  let json=JSON.stringify(backup);
+  download(`respaldo_rivier_${new Date().toISOString().slice(0,10)}.json`,json,"application/json");
+  toast("Respaldo exportado");
+}
+function arrayBufferToBase64(buf){let b=new Uint8Array(buf),s="";b.forEach(x=>s+=String.fromCharCode(x));return btoa(s)}
+function base64ToArrayBuffer(b64){let bin=atob(b64),buf=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);return buf.buffer}
+
+async function importBackup(file){
+  let statusBox=$("#importStatus");
+  statusBox.style.cssText="display:block;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff6dc;color:#6e4b00;border:1px solid #f5e0a0";
+  statusBox.textContent="⏳ Leyendo archivo de respaldo…";
+  try{
+    let text=await file.text();
+    let backup=JSON.parse(text);
+    if(!backup.docs||!Array.isArray(backup.docs)) throw new Error("El archivo no es un respaldo válido de Rivier Conta.");
+
+    let docCount=backup.docs.length;
+    let fileCount=(backup.files||[]).length;
+
+    statusBox.textContent=`⏳ Restaurando ${docCount} comprobantes y ${fileCount} archivos…`;
+
+    // Preguntar si reemplazar o agregar
+    let mode="add";
+    if(docs.length>0){
+      let choice=confirm(
+        `Ya tienes ${docs.length} comprobante(s) en este navegador.
+
+`+
+        `• OK = REEMPLAZAR todo con el respaldo (${docCount} comprobantes)
+`+
+        `• Cancelar = AGREGAR el respaldo a los existentes`
+      );
+      mode=choice?"replace":"add";
+    }
+
+    if(mode==="replace"){
+      // Limpiar base de datos actual
+      await new Promise(res=>{
+        let t=db.transaction(["docs","files"],"readwrite");
+        t.objectStore("docs").clear();
+        t.objectStore("files").clear();
+        t.oncomplete=res;
+      });
+      docs=[];
+    }
+
+    // Restaurar comprobantes
+    let docsOk=0;
+    for(let doc of backup.docs){
+      try{ await dbPut("docs",doc); docsOk++; }catch(e){}
+    }
+
+    // Restaurar archivos (convertir base64 → ArrayBuffer)
+    let filesOk=0;
+    for(let f of (backup.files||[])){
+      try{
+        let rec={...f, data: base64ToArrayBuffer(f.data)};
+        await dbPut("files",rec); filesOk++;
+      }catch(e){}
+    }
+
+    await renderAll();
+
+    statusBox.style.cssText="display:block;padding:11px 14px;border-radius:10px;font-size:12px;background:#eef9f3;color:#1a6644;border:1px solid #b8e8d0";
+    statusBox.innerHTML=`✓ <b>Respaldo restaurado correctamente.</b><br>${docsOk} comprobantes y ${filesOk} archivos cargados.${mode==="replace"?" Los datos anteriores fueron reemplazados.":""}`;
+    toast(`✓ Respaldo restaurado: ${docsOk} comprobantes`);
+
+  }catch(e){
+    statusBox.style.cssText="display:block;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff0ef;color:#8b1f1c;border:1px solid #f0cccb";
+    statusBox.textContent="✗ Error al restaurar: "+e.message;
+    toast("Error al importar respaldo");
+  }
+}
+
+function download(name,text,type){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Script no disponible"));document.head.appendChild(s)})}
+
+// ════════════════════════════════════════════
+//  DEMO DATA
+// ════════════════════════════════════════════
+async function loadDemo(){
+  let sample=[{direction:"purchase",date:"2026-06-05",rnc:"101019921",name:"Servicios Empresariales del Caribe",ncf:"B0100000123",expense:"02",subtotal:10000,itbis:1800,total:11800,source:"Ejemplo"},{direction:"purchase",date:"2026-06-08",rnc:"131151867",name:"Distribuidora Nacional SRL",ncf:"B0100000889",expense:"09",subtotal:45000,itbis:8100,total:53100,source:"Ejemplo"},{direction:"purchase",date:"2026-06-10",rnc:"101556198",name:"Papelería Comercial López",ncf:"B0100001234",expense:"02",subtotal:3500,itbis:630,total:4130,source:"Ejemplo"},{direction:"sale",date:"2026-06-12",rnc:"",name:"Consumidor final",ncf:"B0200000456",subtotal:2500,itbis:450,total:2950,payment:"card",source:"Ejemplo"},{direction:"purchase",date:"2026-06-14",rnc:"123456789",name:"Proveedor para revisar",ncf:"B990001",subtotal:1000,itbis:180,total:1200,source:"Ejemplo con errores"}];
+  for(let d of sample) await saveDoc(normalize(d));
+  await renderAll();
+  toast("Datos de demostración cargados");
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION & UI
+// ════════════════════════════════════════════
+function showView(id){
+  $$(".view").forEach(v=>v.classList.remove("active"));$("#"+id).classList.add("active");
+  $$(".nav-btn[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+  const titles={dashboard:"Resumen contable",documents:"Gestión de comprobantes",archive:"Archivo de facturas",reports:"Reportes DGII",settings:"Configuración"};
+  $("#pageTitle").textContent=titles[id]||id;
+  document.body.classList.remove("menu-open");
+  if(id==="archive") renderArchive();
+}
+function toast(t){$("#toast").textContent=t;$("#toast").classList.add("show");setTimeout(()=>$("#toast").classList.remove("show"),3200)}
+function showApiKeyStatus(msg, isOk){
+  let k=window._apiKey||"",box=$("#apiKeyStatus"),banner=$("#noKeyBanner");
+  let valid=k&&(k.startsWith("AIza")||k.startsWith("gsk_"))&&k.length>20;
+  if(banner) banner.style.display=valid?"none":"flex";
+  if(!box)return;
+  if(msg){
+    // Message from test
+    box.style.cssText=`display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:${isOk?"#eef9f3":"#fff0ef"};color:${isOk?"#1a6644":"#8b1f1c"};border:1px solid ${isOk?"#b8e8d0":"#f0cccb"}`;
+    box.textContent=msg;
+  } else if(valid){
+    box.style.cssText="display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:#eef9f3;color:#1a6644;border:1px solid #b8e8d0";
+    box.textContent="✓ API Key de Google configurada — extracción con IA activa. Plan gratuito: 1,500 solicitudes/día.";
+  } else if(k){
+    box.style.cssText="display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff0ef;color:#8b1f1c;border:1px solid #f0cccb";
+    box.textContent="⚠ La clave no parece válida. Debe comenzar con AIzaSy… Obtén una en aistudio.google.com/apikey";
+  } else {
+    box.style.cssText="display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff6dc;color:#6e4b00;border:1px solid #f5e0a0";
+    box.textContent="⚠ Sin API Key — la extracción con IA no funcionará. Ve a aistudio.google.com/apikey para obtener una gratis.";
+  }
+}
+
+async function testApiKey(){
+  let key=($("#apiKey").value||$("#apiKey").innerText||"").trim().replace(/\s+/g,'');
+  let provider=$("#aiProvider")?.value||"groq";
+  if(!key){showApiKeyStatus("Escribe primero la API Key en el campo.",false);return}
+  let btn=$("#testKeyBtn");btn.textContent="Probando…";btn.disabled=true;
+  try{
+    let resp;
+    if(provider==="groq"){
+      resp=await apiFetch("https://api.groq.com/openai/v1/chat/completions",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":`Bearer ${key}`},
+        body:JSON.stringify({model:"meta-llama/llama-4-scout-17b-16e-instruct",messages:[{role:"user",content:"Di solo: OK"}],max_tokens:5})
+      });
+    } else {
+      resp=await apiFetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        {method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},
+         body:JSON.stringify({contents:[{parts:[{text:"Responde solo: OK"}]}],generationConfig:{maxOutputTokens:5}})}
+      );
+    }
+    if(resp.ok){
+      window._apiKey=key;window._aiProvider=provider;
+      localStorage.setItem("rp_apikey",key);localStorage.setItem("rp_provider",provider);
+      let provName=provider==="groq"?"Groq · Llama 4 Scout — Gratis ✓":"Google Gemini 2.5 Flash";
+      showApiKeyStatus(`✓ Clave válida. Proveedor: ${provName}`,true);
+      toast("✓ API Key verificada correctamente");
+    } else {
+      let e=await resp.json().catch(()=>({}));
+      showApiKeyStatus("✗ Clave rechazada: "+(e.error?.message||`Error ${resp.status}`),false);
+    }
+  }catch(e){
+    showApiKeyStatus("✗ Error de conexión: "+e.message,false);
+  }
+  btn.textContent="Probar";btn.disabled=false;
+}
+
+function showApiKeyStatus(msg, isOk){
+  let k=window._apiKey||"",box=$("#apiKeyStatus"),banner=$("#noKeyBanner");
+  let valid=k&&(k.startsWith("AIza")||k.startsWith("gsk_"))&&k.length>20;
+  if(banner) banner.style.display=valid?"none":"flex";
+  if(!box)return;
+  if(msg!==undefined){
+    box.style.cssText=`display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:${isOk?"#eef9f3":"#fff0ef"};color:${isOk?"#1a6644":"#8b1f1c"};border:1px solid ${isOk?"#b8e8d0":"#f0cccb"}`;
+    box.textContent=msg;
+  } else if(valid){
+    let prov=window._aiProvider==="groq"?"Groq · Llama 4 Scout":"Google Gemini 2.5";
+    box.style.cssText="display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:#eef9f3;color:#1a6644;border:1px solid #b8e8d0";
+    box.textContent=`✓ API Key configurada — IA activa con ${prov}.`;
+  } else if(k){
+    box.style.cssText="display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff0ef;color:#8b1f1c;border:1px solid #f0cccb";
+    box.textContent="⚠ La clave no parece válida. Groq empieza con gsk_ · Google empieza con AIzaSy";
+  } else {
+    box.style.cssText="display:block;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:12px;background:#fff6dc;color:#6e4b00;border:1px solid #f5e0a0";
+    box.textContent="⚠ Sin API Key — la extracción con IA no funcionará. Ve a Configuración.";
+  }
+}
+
+// ════════════════════════════════════════════
+//  TOOLTIP HELPERS
+// ════════════════════════════════════════════
+let _tipEl=null;
+function showTip(anchor){
+  let tip=anchor.nextElementSibling;
+  if(!tip||!tip.classList.contains("issue-tip"))return;
+  tip.style.display="block";
+  _tipEl=tip;
+  // Position near cursor/anchor
+  let r=anchor.getBoundingClientRect();
+  let top=r.bottom+8, left=r.left;
+  // Keep in viewport
+  if(left+360>window.innerWidth) left=window.innerWidth-370;
+  if(top+200>window.innerHeight) top=r.top-tip.offsetHeight-8;
+  tip.style.top=top+"px";
+  tip.style.left=left+"px";
+}
+function hideTip(){
+  if(_tipEl){_tipEl.style.display="none";_tipEl=null;}
+}
+
+// ════════════════════════════════════════════
+//  EVENT LISTENERS
+// ════════════════════════════════════════════
+$$(".nav-btn[data-view]").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+$("#search").oninput=renderTable;
+$$(".chip[data-status]").forEach(b=>b.onclick=()=>{$$(".chip[data-status]").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentFilter=b.dataset.status;renderTable()});
+$$(".chip[data-dir]").forEach(b=>b.onclick=()=>{let was=b.classList.contains("active");$$(".chip[data-dir]").forEach(x=>x.classList.remove("active"));if(!was){b.classList.add("active");currentDir=b.dataset.dir}else currentDir="all";renderTable()});
+$$(".chip[data-atype]").forEach(b=>b.onclick=()=>{$$(".chip[data-atype]").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderArchive()});
+if($("#archSearch")) $("#archSearch").oninput=renderArchive;
+
+$("#fileInput").onchange=e=>processFiles(e.target.files);
+$("#uploadTop").onclick=()=>$("#fileInput").click();
+let dz=$("#dropZone");
+dz.ondragover=e=>{e.preventDefault();dz.classList.add("over")};
+dz.ondragleave=()=>dz.classList.remove("over");
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove("over");processFiles(e.dataTransfer.files)};
+$("#aiUploadBtn").onclick=()=>$("#aiFileInput").click();
+$("#aiFileInput").onchange=e=>handleAISingle(e.target.files);
+$("#aiBulkBtn").onclick=()=>document.getElementById("aiBulkModal").showModal();
+$("#manualBtn").onclick=()=>editDoc();
+$("#manualBtn2").onclick=()=>editDoc();
+let bdz=$("#bulkDropZone");
+bdz.ondragover=e=>{e.preventDefault();bdz.classList.add("over")};
+bdz.ondragleave=()=>bdz.classList.remove("over");
+bdz.ondrop=e=>{e.preventDefault();bdz.classList.remove("over");handleAIBulk(e.dataTransfer.files)};
+$("#bulkFileInput").onchange=e=>handleAIBulk(e.target.files);
+$("#closeEditor").onclick=()=>$("#editor").close();
+$("#closeEditorBtn").onclick=()=>$("#editor").close();
+$("#closeBulk").onclick=()=>$("#aiBulkModal").close();
+$("#closeBulkBtn").onclick=()=>$("#aiBulkModal").close();
+$("#saveDoc").onclick=async()=>{
+  let d=readEditor();
+  await saveDoc(d);
+  $("#editor").close();
+  await renderAll();
+  toast("Comprobante guardado y validado");
+};
+$("#deleteDoc").onclick=()=>confirmDelete($("#eId").value);
+$("#demoBtn").onclick=loadDemo;
+$("#mobileMenu").onclick=()=>document.body.classList.toggle("menu-open");
+
+document.addEventListener("click",e=>{if(e.target.id==="testKeyBtn") testApiKey()});
+document.addEventListener("change",e=>{
+  if(e.target.id==="aiProvider"){
+    let isGroq=e.target.value==="groq";
+    let inp=$("#apiKey");
+    let help=$("#providerHelp");
+    if(inp) inp.placeholder=isGroq?"gsk_…":"AIzaSy…";
+    if(help) help.innerHTML=isGroq
+      ?`<b>Groq (recomendado):</b> Obtén tu clave gratis en <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys</a> → Create API Key. Clave empieza con <code>gsk_</code>. Sin tarjeta de crédito.`
+      :`<b>Google Gemini:</b> Obtén tu clave en <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue)">aistudio.google.com/apikey</a>. Clave empieza con <code>AIzaSy</code>.`;
+  }
+});
+
+$("#saveSettings").onclick=()=>{
+  let key=($("#apiKey").value||$("#apiKey").innerText||"").trim().replace(/\s+/g,'');
+  let prov=$("#aiProvider")?.value||"groq";
+  localStorage.setItem("rp_settings",JSON.stringify({name:$("#companyName").value,rnc:$("#companyRnc").value,period:$("#workPeriod").value,currency:$("#currency").value}));
+  if(key){localStorage.setItem("rp_apikey",key);window._apiKey=key}
+  localStorage.setItem("rp_provider",prov);window._aiProvider=prov;
+  $("#reportRnc").value=$("#companyRnc").value;
+  $("#reportPeriod").value=$("#workPeriod").value;
+  showApiKeyStatus();toast("Configuración guardada");
+};
+$("#clearData").onclick=async()=>{
+  if(!confirm("¿Borrar TODOS los comprobantes y archivos? Esta acción no se puede deshacer."))return;
+  await new Promise(res=>{let t=db.transaction(["docs","files"],"readwrite");t.objectStore("docs").clear();t.objectStore("files").clear();t.oncomplete=res});
+  docs=[];await renderAll();toast("Base de datos limpiada");
+};
+if($("#exportBackup")) $("#exportBackup").onclick=exportBackup;
+if($("#importBackupInput")) $("#importBackupInput").onchange=e=>{
+  if(e.target.files[0]) importBackup(e.target.files[0]);
+  e.target.value="";
+};
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+async function init(){
+  await openDB();
+  let st=JSON.parse(localStorage.getItem("rp_settings")||"{}"),now=new Date().toISOString().slice(0,7);
+  $("#companyName").value=st.name||"Rivier Plasencia Rodríguez";
+  $("#companyRnc").value=st.rnc||"";
+  $("#workPeriod").value=st.period||now;
+  $("#currency").value=st.currency||"DOP";
+  $("#reportRnc").value=st.rnc||"";
+  $("#reportPeriod").value=st.period||now;
+  let savedKey=localStorage.getItem("rp_apikey")||"";
+  let savedProvider=localStorage.getItem("rp_provider")||"groq";
+  if(savedKey){window._apiKey=savedKey;let ka=$("#apiKey");if(ka)ka.value=savedKey}
+  window._aiProvider=savedProvider;
+  let provSel=$("#aiProvider");
+  if(provSel) provSel.value=savedProvider;
+  showApiKeyStatus();
+  await renderAll();
+
+  // iOS install banner — mostrar solo en Safari de iPhone/iPad, no en standalone
+  detectIOSInstall();
+}
+
+function detectIOSInstall(){
+  let isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  let isSafari=/safari/i.test(navigator.userAgent)&&!/chrome|crios|fxios/i.test(navigator.userAgent);
+  let isStandalone=window.navigator.standalone===true;
+  let dismissed=localStorage.getItem("ios_banner_dismissed");
+  if(isIOS && isSafari && !isStandalone && !dismissed){
+    // Show after 3 seconds
+    setTimeout(()=>{
+      let b=document.getElementById("iosBanner");
+      if(b) b.classList.add("show");
+    },3000);
+  }
+}
+
+function dismissIOSBanner(){
+  let b=document.getElementById("iosBanner");
+  if(b) b.classList.remove("show");
+  localStorage.setItem("ios_banner_dismissed","1");
+}
+
+init();
+</script>
+</body>
+</html>
