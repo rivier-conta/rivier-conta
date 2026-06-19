@@ -259,6 +259,48 @@
       .sidebar{padding-top:env(safe-area-inset-top)}
       .content{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
     }
+    /* CAMERA BUTTON */
+    .cam-btn{
+      background:linear-gradient(135deg,#0d1f1e,#1a3532);
+      border-color:transparent;color:#fff;gap:8px;
+    }
+    .cam-btn:hover{background:linear-gradient(135deg,#1a3532,#2a5550)}
+    /* CAMERA MODAL */
+    #cameraModal{width:min(520px,calc(100% - 16px))}
+    .cam-preview-wrap{
+      position:relative;background:#000;border-radius:12px;overflow:hidden;
+      width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+    }
+    .cam-preview-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+    .cam-preview-wrap canvas{width:100%;height:100%;object-fit:cover;display:none}
+    .cam-overlay{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:13px;text-align:center;padding:20px;
+      background:rgba(0,0,0,.6);flex-direction:column;gap:10px;
+    }
+    .cam-corner{
+      position:absolute;width:24px;height:24px;border-color:#fff;border-style:solid;
+      border-width:0;opacity:.7;
+    }
+    .cam-corner.tl{top:12px;left:12px;border-top-width:3px;border-left-width:3px;border-radius:4px 0 0 0}
+    .cam-corner.tr{top:12px;right:12px;border-top-width:3px;border-right-width:3px;border-radius:0 4px 0 0}
+    .cam-corner.bl{bottom:12px;left:12px;border-bottom-width:3px;border-left-width:3px;border-radius:0 0 0 4px}
+    .cam-corner.br{bottom:12px;right:12px;border-bottom-width:3px;border-right-width:3px;border-radius:0 0 4px 0}
+    .cam-shutter{
+      width:68px;height:68px;border-radius:50%;
+      background:#fff;border:4px solid rgba(255,255,255,.4);
+      cursor:pointer;transition:.12s;display:flex;align-items:center;justify-content:center;
+      box-shadow:0 0 0 2px rgba(0,0,0,.3);
+    }
+    .cam-shutter:hover{transform:scale(1.06)}
+    .cam-shutter:active{transform:scale(.94)}
+    .cam-shutter-inner{width:52px;height:52px;border-radius:50%;background:#fff;border:2px solid #e0e0e0}
+    .cam-bar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 20px;background:#111;border-radius:0 0 12px 12px;
+      gap:12px;
+    }
+    .cam-tip{font-size:11px;color:#888;text-align:center}
     /* IOS INSTALL BANNER */
     .ios-banner{
       display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;
@@ -354,9 +396,11 @@
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                   <button class="btn ai-btn sm" id="aiUploadBtn">✨ Subir imagen / PDF</button>
+                  <button class="btn cam-btn sm" id="cameraBtn">📷 Usar cámara</button>
                   <input type="file" id="aiFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none" multiple>
-                  <span style="font-size:11px;color:#5a6a9a">El archivo original queda guardado y consultable</span>
+                  <input type="file" id="cameraFileInput" accept="image/*" capture="environment" style="display:none">
                 </div>
+                <p style="font-size:11px;color:#5a6a9a;margin-top:6px">📷 En iPhone/Android abre la cámara directamente · En PC muestra vista previa y captura</p>
                 <div class="ai-output" id="aiOutput" style="display:none"></div>
                 <div class="ai-status" id="aiStatus" style="display:none"></div>
               </div>
@@ -394,6 +438,7 @@
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0">
             <button class="btn sm ai-btn" id="aiBulkBtn">✨ IA masiva</button>
+            <button class="btn sm cam-btn" id="cameraBtnDocs">📷 Cámara</button>
             <button class="btn sm" id="manualBtn2">＋ Manual</button>
           </div>
         </div>
@@ -619,6 +664,37 @@
         <button class="btn sm" onclick="document.getElementById('qrModal').close()">Cerrar</button>
       </div>
     </div>
+  </div>
+</dialog>
+
+<!-- CAMERA MODAL (desktop fallback) -->
+<dialog id="cameraModal">
+  <div class="modal-head">
+    <h2>📷 Capturar factura</h2>
+    <button class="close" onclick="closeCamera()">×</button>
+  </div>
+  <div class="modal-body" style="padding:0">
+    <div class="cam-preview-wrap" id="camPreviewWrap">
+      <video id="camVideo" autoplay playsinline muted></video>
+      <canvas id="camCanvas"></canvas>
+      <div class="cam-corner tl"></div>
+      <div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div>
+      <div class="cam-corner br"></div>
+      <div class="cam-overlay" id="camOverlay">
+        <span style="font-size:28px">📷</span>
+        <span>Iniciando cámara…</span>
+      </div>
+    </div>
+    <div class="cam-bar">
+      <button class="btn sm" id="camFlipBtn" onclick="flipCamera()" style="background:#222;border-color:#333;color:#fff;min-width:80px">↺ Girar</button>
+      <button class="cam-shutter" id="camShutter" onclick="capturePhoto()" title="Tomar foto">
+        <div class="cam-shutter-inner"></div>
+      </button>
+      <button class="btn sm" id="camRetakeBtn" onclick="retakePhoto()" style="display:none;background:#222;border-color:#333;color:#fff;min-width:80px">↺ Repetir</button>
+      <button class="btn primary sm" id="camConfirmBtn" onclick="confirmPhoto()" style="display:none;min-width:80px">✓ Usar esta</button>
+    </div>
+    <div class="cam-tip" style="padding:8px 16px 14px" id="camTip">Centra la factura en el recuadro y toca el botón blanco para capturar</div>
   </div>
 </dialog>
 
@@ -989,6 +1065,37 @@ function parseCSV(text,name){
 // ════════════════════════════════════════════
 async function fileToB64(file){return new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=()=>rej(new Error("Error de lectura"));r.readAsDataURL(file)})}
 
+// Aplica el procesamiento de escaner a cualquier imagen File
+// Devuelve un nuevo File con la imagen procesada
+async function applyScanner(file){
+  if(!file.type.startsWith("image/")) return file; // solo imágenes
+  return new Promise((res,rej)=>{
+    let img=new Image();
+    let url=URL.createObjectURL(file);
+    img.onload=()=>{
+      try{
+        let canvas=document.createElement("canvas");
+        canvas.width=img.naturalWidth;
+        canvas.height=img.naturalHeight;
+        let ctx=canvas.getContext("2d");
+        ctx.drawImage(img,0,0);
+        URL.revokeObjectURL(url);
+        // Aplicar procesamiento de escaneo
+        let scanned=scannerProcess(canvas);
+        scanned.toBlob(blob=>{
+          let scannedFile=new File([blob],file.name,{type:"image/jpeg"});
+          res(scannedFile);
+        },"image/jpeg",0.96);
+      }catch(e){
+        URL.revokeObjectURL(url);
+        res(file); // si falla, devolver original
+      }
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); res(file); };
+    img.src=url;
+  });
+}
+
 // ── API FETCH HELPER ─────────────────────────────────────────────────────
 // Detecta si estamos en servidor local o file://, y actúa en consecuencia.
 // Desde file:// → llama directo con headers CORS especiales (funciona en PC)
@@ -1003,6 +1110,11 @@ async function apiFetch(url, options){
 }
 
 async function extractWithAI(file){
+  // Aplicar procesamiento de escaner a imágenes antes de enviar a la IA
+  // Mejora la legibilidad de dígitos RNC/NCF en fotos con sombras o luz irregular
+  if(file.type.startsWith("image/")){
+    try{ file=await applyScanner(file); }catch(e){}
+  }
   let b64=await fileToB64(file);
   let apiKey=window._apiKey;
   let provider=window._aiProvider||"groq";
@@ -1989,6 +2101,181 @@ function showApiKeyStatus(msg, isOk){
 }
 
 // ════════════════════════════════════════════
+//  CAMERA
+// ════════════════════════════════════════════
+let _camStream=null, _camFacing="environment", _capturedBlob=null;
+
+async function openCamera(){
+  // On mobile: use native file input with capture — simpler & more reliable
+  let isMobile=/iphone|ipad|ipod|android/i.test(navigator.userAgent);
+  if(isMobile){
+    // Native camera on mobile — much better UX than WebRTC on phones
+    $("#cameraFileInput").click();
+    return;
+  }
+  // Desktop: use WebRTC camera modal
+  let modal=document.getElementById("cameraModal");
+  let video=$("#camVideo"), canvas=$("#camCanvas"), overlay=$("#camOverlay");
+  canvas.style.display="none";
+  video.style.display="block";
+  $("#camShutter").style.display="flex";
+  $("#camRetakeBtn").style.display="none";
+  $("#camConfirmBtn").style.display="none";
+  $("#camTip").textContent="Centra la factura en el recuadro y toca el botón blanco para capturar";
+  modal.showModal();
+  await startCamStream();
+}
+
+async function startCamStream(){
+  let overlay=$("#camOverlay"), video=$("#camVideo");
+  overlay.style.display="flex";
+  overlay.innerHTML="<span style='font-size:24px'>📷</span><span>Iniciando cámara…</span>";
+  try{
+    if(_camStream){ _camStream.getTracks().forEach(t=>t.stop()); }
+    _camStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:_camFacing, width:{ideal:1920}, height:{ideal:1080}},
+      audio:false
+    });
+    video.srcObject=_camStream;
+    await video.play();
+    overlay.style.display="none";
+  }catch(e){
+    let msg="No se pudo acceder a la cámara.";
+    if(e.name==="NotAllowedError") msg="Permiso de cámara denegado. Permite el acceso en la configuración del navegador.";
+    if(e.name==="NotFoundError") msg="No se encontró cámara en este dispositivo.";
+    overlay.innerHTML=`<span style='font-size:24px'>⚠️</span><span>${msg}</span>`;
+  }
+}
+
+function flipCamera(){
+  _camFacing=_camFacing==="environment"?"user":"environment";
+  startCamStream();
+}
+
+// ── IMAGE SCANNER PROCESSING ──────────────────────────────────────────────
+function scannerProcess(srcCanvas){
+  let W=srcCanvas.width, H=srcCanvas.height;
+  let out=document.createElement("canvas");
+  out.width=W; out.height=H;
+  let ctx=out.getContext("2d");
+  ctx.drawImage(srcCanvas,0,0);
+  let imgData=ctx.getImageData(0,0,W,H);
+  let d=imgData.data;
+
+  // Paso 1: escala de grises
+  let gray=new Float32Array(W*H);
+  for(let i=0;i<W*H;i++){
+    gray[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  }
+
+  // Paso 2: blur grande para estimar fondo (elimina sombras)
+  let bg=new Float32Array(W*H);
+  let R=Math.max(8,Math.round(Math.min(W,H)*0.07));
+  let tmp=new Float32Array(W*H);
+  for(let y=0;y<H;y++){
+    let sum=0,cnt=0;
+    for(let x=0;x<W;x++){
+      sum+=gray[y*W+x];cnt++;
+      if(x>R){sum-=gray[y*W+(x-R-1)];cnt--;}
+      if(x>=R)tmp[y*W+(x-Math.floor(R/2))]=sum/cnt;
+    }
+  }
+  for(let x=0;x<W;x++){
+    let sum=0,cnt=0;
+    for(let y=0;y<H;y++){
+      sum+=tmp[y*W+x];cnt++;
+      if(y>R){sum-=tmp[(y-R-1)*W+x];cnt--;}
+      if(y>=R)bg[(y-Math.floor(R/2))*W+x]=sum/cnt;
+    }
+  }
+
+  // Paso 3: normalizar por fondo (quita gradientes de luz y sombras)
+  let norm=new Float32Array(W*H);
+  for(let i=0;i<W*H;i++){
+    norm[i]=Math.min(255,(gray[i]/(bg[i]||128))*220);
+  }
+
+  // Paso 4: curva S para aumentar contraste
+  for(let i=0;i<W*H;i++){
+    let v=norm[i]/255;
+    v=v<0.5?2*v*v:1-Math.pow(-2*v+2,2)/2;
+    norm[i]=v*255;
+  }
+
+  // Paso 5: umbral adaptativo local (binarizacion tipo escaner)
+  let bR=Math.max(3,Math.round(Math.min(W,H)*0.025));
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      let sum=0,cnt=0;
+      let y0=Math.max(0,y-bR),y1=Math.min(H-1,y+bR);
+      let x0=Math.max(0,x-bR),x1=Math.min(W-1,x+bR);
+      for(let yy=y0;yy<=y1;yy++)for(let xx=x0;xx<=x1;xx++){sum+=norm[yy*W+xx];cnt++;}
+      let v=norm[y*W+x]<(sum/cnt)*0.87?0:255;
+      let i=y*W+x;
+      d[i*4]=v;d[i*4+1]=v;d[i*4+2]=v;d[i*4+3]=255;
+    }
+  }
+  ctx.putImageData(imgData,0,0);
+  return out;
+}
+
+function capturePhoto(){
+  let video=$("#camVideo"),canvas=$("#camCanvas");
+  canvas.width=video.videoWidth||640;
+  canvas.height=video.videoHeight||480;
+  let ctx=canvas.getContext("2d");
+  if(_camFacing==="user"){ctx.translate(canvas.width,0);ctx.scale(-1,1);}
+  ctx.drawImage(video,0,0);
+  video.style.display="none";
+  canvas.style.display="block";
+  $("#camShutter").style.display="none";
+  $("#camRetakeBtn").style.display="flex";
+  $("#camConfirmBtn").style.display="none";
+  $("#camFlipBtn").style.display="none";
+  $("#camTip").innerHTML=`<span class="spinner" style="display:inline-block;width:11px;height:11px;border:2px solid #666;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span> Procesando como escáner…`;
+  if(_camStream)_camStream.getTracks().forEach(t=>t.enabled=false);
+
+  setTimeout(()=>{
+    try{
+      let scanned=scannerProcess(canvas);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(scanned,0,0);
+      $("#camTip").textContent="✓ Imagen escaneada. ¿Se ven bien los textos?";
+    }catch(e){
+      $("#camTip").textContent="Foto capturada sin filtro. ¿Se ven bien los textos?";
+    }
+    $("#camConfirmBtn").style.display="flex";
+    canvas.toBlob(blob=>{_capturedBlob=blob;},"image/jpeg",0.96);
+  },80);
+}
+
+function retakePhoto(){
+  let video=$("#camVideo"),canvas=$("#camCanvas");
+  video.style.display="block";canvas.style.display="none";
+  $("#camShutter").style.display="flex";
+  $("#camRetakeBtn").style.display="none";
+  $("#camConfirmBtn").style.display="none";
+  $("#camFlipBtn").style.display="flex";
+  $("#camTip").textContent="Centra la factura y toca el botón blanco para capturar";
+  _capturedBlob=null;
+  if(_camStream)_camStream.getTracks().forEach(t=>t.enabled=true);
+}
+
+async function confirmPhoto(){
+  if(!_capturedBlob){toast("No hay foto capturada");return;}
+  closeCamera();
+  let fname=`factura_${new Date().toISOString().slice(0,19).replace(/[T:]/g,"-")}.jpg`;
+  let file=new File([_capturedBlob],fname,{type:"image/jpeg"});
+  _capturedBlob=null;
+  await handleAISingle([file]);
+}
+
+function closeCamera(){
+  if(_camStream){_camStream.getTracks().forEach(t=>t.stop());_camStream=null;}
+  document.getElementById("cameraModal").close();
+}
+
+// ════════════════════════════════════════════
 //  TOOLTIP HELPERS
 // ════════════════════════════════════════════
 let _tipEl=null;
@@ -2028,6 +2315,12 @@ dz.ondragleave=()=>dz.classList.remove("over");
 dz.ondrop=e=>{e.preventDefault();dz.classList.remove("over");processFiles(e.dataTransfer.files)};
 $("#aiUploadBtn").onclick=()=>$("#aiFileInput").click();
 $("#aiFileInput").onchange=e=>handleAISingle(e.target.files);
+if($("#cameraBtn")) $("#cameraBtn").onclick=()=>openCamera();
+if($("#cameraBtnDocs")) $("#cameraBtnDocs").onclick=()=>openCamera();
+if($("#cameraFileInput")) $("#cameraFileInput").onchange=e=>{
+  if(e.target.files.length) handleAISingle(e.target.files);
+  e.target.value="";
+};
 $("#aiBulkBtn").onclick=()=>document.getElementById("aiBulkModal").showModal();
 $("#manualBtn").onclick=()=>editDoc();
 $("#manualBtn2").onclick=()=>editDoc();
